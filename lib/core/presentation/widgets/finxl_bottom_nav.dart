@@ -26,13 +26,15 @@ class FinxlBottomNav extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
           child: Row(
             children: AppTab.values
-                .map((tab) => Expanded(
-                      child: _NavItem(
-                        tab: tab,
-                        isActive: tab == currentTab,
-                        onTap: () => onTabSelected(tab),
-                      ),
-                    ))
+                .map(
+                  (tab) => Expanded(
+                    child: _NavItem(
+                      tab: tab,
+                      isActive: tab == currentTab,
+                      onTap: () => onTabSelected(tab),
+                    ),
+                  ),
+                )
                 .toList(growable: false),
           ),
         ),

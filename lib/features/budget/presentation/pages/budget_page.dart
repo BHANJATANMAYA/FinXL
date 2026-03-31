@@ -1,4 +1,5 @@
 import 'package:finxl/core/common/load_status.dart';
+import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
 import 'package:finxl/core/presentation/widgets/progress_bar.dart';
 import 'package:finxl/core/presentation/widgets/section_card.dart';
@@ -10,6 +11,7 @@ import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
 import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class BudgetPage extends StatelessWidget {
@@ -19,149 +21,209 @@ class BudgetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<BudgetCubit, BudgetState>(
       builder: (context, state) {
-        if (state.status != LoadStatus.success || state.overview == null) {
+        if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final overview = state.overview!;
-        final overspent = overview.categories.firstWhere((item) => item.exceeded);
-        final regular = overview.categories.where((item) => !item.exceeded).toList(growable: false);
-        final remainingRatio = overview.remainingBudget / overview.totalBudget;
+        if (state.status == LoadStatus.failure && state.overview == null) {
+          return _FailureState(
+            message: state.errorMessage ?? 'Unable to load budgets.',
+            onRetry: () => context.read<BudgetCubit>().load(),
+          );
+        }
 
-        return FinxlPageBody(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'MONTHLY BUDGET STATUS',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: AppTheme.onSurfaceVariant,
+        final overview = state.overview!;
+        final overspentList = overview.categories
+            .where((item) => item.exceeded)
+            .toList(growable: false);
+        final overspent = overspentList.isNotEmpty ? overspentList.first : null;
+        final regular = overview.categories
+            .where((item) => !item.exceeded)
+            .toList(growable: false);
+        final remainingRatio = overview.totalBudget <= 0
+            ? 0.0
+            : overview.remainingBudget / overview.totalBudget;
+
+        return RefreshIndicator(
+          onRefresh: () => context.read<BudgetCubit>().refresh(),
+          child: FinxlPageBody(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'MONTHLY BUDGET STATUS',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formatCurrency(overview.remainingBudget, decimals: 2),
+                          style: GoogleFonts.manrope(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        Text(
+                          'Left from ${formatCurrency(overview.totalBudget, decimals: 2)} total',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          formatPercent(remainingRatio * 100),
+                          style: GoogleFonts.manrope(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                        Text(
+                          'REMAINING',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SectionCard(
+                  color: const Color(0xFFFFF1F0),
+                  border: const Border(
+                    left: BorderSide(color: AppTheme.danger, width: 4),
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        formatCurrency(overview.remainingBudget, decimals: 2),
-                        style: GoogleFonts.manrope(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1,
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFDAD6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppTheme.danger,
                         ),
                       ),
-                      Text(
-                        'Left from ${formatCurrency(overview.totalBudget, decimals: 2)} total',
-                        style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              overview.alertTitle,
+                              style: GoogleFonts.manrope(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.danger,
+                              ),
+                            ),
+                            Text(
+                              overview.alertMessage,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: AppTheme.danger.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        formatPercent(remainingRatio * 100),
-                        style: GoogleFonts.manrope(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.primary,
+                ),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: regular
+                      .map(
+                        (category) => SizedBox(
+                          width: 430,
+                          child: _BudgetCard(category: category),
                         ),
-                      ),
-                      Text(
-                        'REMAINING',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
+                      )
+                      .toList(growable: false),
+                ),
+                if (overspent != null) ...[
+                  const SizedBox(height: 24),
+                  _ExceededCard(category: overspent),
+                ],
+                const SizedBox(height: 24),
+                InkWell(
+                  onTap: () => context.push(AppRouter.addBudgetPath),
+                  borderRadius: BorderRadius.circular(28),
+                  child: SectionCard(
+                    color: AppTheme.surfaceContainerLow,
+                    border: Border.all(color: AppTheme.surfaceContainerHighest),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.add_circle_outline,
                           color: AppTheme.onSurfaceVariant,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Text(
+                          'Create New Budget Category',
+                          style: GoogleFonts.manrope(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SectionCard(
-                color: const Color(0xFFFFF1F0),
-                border: const Border(left: BorderSide(color: AppTheme.danger, width: 4)),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFFDAD6),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.warning_amber_rounded, color: AppTheme.danger),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            overview.alertTitle,
-                            style: GoogleFonts.manrope(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.danger,
-                            ),
-                          ),
-                          Text(
-                            overview.alertMessage,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: AppTheme.danger.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: regular
-                    .map((category) => SizedBox(width: 430, child: _BudgetCard(category: category)))
-                    .toList(growable: false),
-              ),
-              const SizedBox(height: 24),
-              _ExceededCard(category: overspent),
-              const SizedBox(height: 24),
-              SectionCard(
-                color: AppTheme.surfaceContainerLow,
-                border: Border.all(color: AppTheme.surfaceContainerHighest),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.add_circle_outline, color: AppTheme.onSurfaceVariant),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Create New Budget Category',
-                      style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _FailureState extends StatelessWidget {
+  const _FailureState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
     );
   }
 }
@@ -196,7 +258,10 @@ class _BudgetCard extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             category.title,
-            style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800),
+            style: GoogleFonts.manrope(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 4),
           Row(
@@ -206,11 +271,17 @@ class _BudgetCard extends StatelessWidget {
             children: [
               Text(
                 formatCurrency(category.spent),
-                style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w800),
+                style: GoogleFonts.manrope(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               Text(
                 'of ${formatCurrency(category.limit)}',
-                style: GoogleFonts.inter(fontSize: 12, color: AppTheme.onSurfaceVariant),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -248,13 +319,18 @@ class _ExceededCard extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: 1,
                         strokeWidth: 12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.danger),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppTheme.danger,
+                        ),
                         backgroundColor: AppTheme.surfaceContainer,
                       ),
                     ),
                     Text(
                       formatPercent(category.progress * 100),
-                      style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w800),
+                      style: GoogleFonts.manrope(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ],
                 ),
@@ -262,10 +338,14 @@ class _ExceededCard extends StatelessWidget {
               SizedBox(width: isWide ? 28 : 0, height: isWide ? 0 : 24),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                  crossAxisAlignment: isWide
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.center,
                   children: [
                     Row(
-                      mainAxisAlignment: isWide ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+                      mainAxisAlignment: isWide
+                          ? MainAxisAlignment.spaceBetween
+                          : MainAxisAlignment.center,
                       children: [
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -276,28 +356,44 @@ class _ExceededCard extends StatelessWidget {
                                 color: AppTheme.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(resolveIcon(category.iconKey), color: AppTheme.danger),
+                              child: Icon(
+                                resolveIcon(category.iconKey),
+                                color: AppTheme.danger,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Text(
                               category.title,
-                              style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800),
+                              style: GoogleFonts.manrope(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ],
                         ),
                         if (isWide)
-                          const StatusBadge(label: 'Exceeded', accent: AppTheme.danger),
+                          const StatusBadge(
+                            label: 'Exceeded',
+                            accent: AppTheme.danger,
+                          ),
                       ],
                     ),
                     if (!isWide) ...[
                       const SizedBox(height: 12),
-                      const StatusBadge(label: 'Exceeded', accent: AppTheme.danger),
+                      const StatusBadge(
+                        label: 'Exceeded',
+                        accent: AppTheme.danger,
+                      ),
                     ],
                     const SizedBox(height: 16),
                     Text(
                       'You have spent ${formatCurrency(category.spent, decimals: 2)}, which is ${formatCurrency(category.spent - category.limit, decimals: 2)} over your planned limit of ${formatCurrency(category.limit, decimals: 2)}.',
                       textAlign: isWide ? TextAlign.left : TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 14, height: 1.5, color: AppTheme.onSurfaceVariant),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -313,7 +409,11 @@ class _ExceededCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.trending_up, size: 16, color: AppTheme.primary),
+                        const Icon(
+                          Icons.trending_up,
+                          size: 16,
+                          color: AppTheme.primary,
+                        ),
                       ],
                     ),
                   ],

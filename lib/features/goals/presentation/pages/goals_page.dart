@@ -1,4 +1,5 @@
 import 'package:finxl/core/common/load_status.dart';
+import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
 import 'package:finxl/core/presentation/widgets/progress_bar.dart';
 import 'package:finxl/core/presentation/widgets/section_card.dart';
@@ -10,6 +11,7 @@ import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/cubit/goals_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class GoalsPage extends StatelessWidget {
@@ -19,78 +21,115 @@ class GoalsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<GoalsCubit, GoalsState>(
       builder: (context, state) {
-        if (state.status != LoadStatus.success || state.overview == null) {
+        if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
+        if (state.status == LoadStatus.failure && state.overview == null) {
+          return _FailureState(
+            message: state.errorMessage ?? 'Unable to load goals.',
+            onRetry: () => context.read<GoalsCubit>().load(),
+          );
+        }
+
         final overview = state.overview!;
-        return FinxlPageBody(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'FINANCIAL JOURNEY',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.6,
-                  color: AppTheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Your Goals',
-                style: GoogleFonts.manrope(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                overview.progressMessage,
-                style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: overview.goals
-                    .map((goal) => SizedBox(width: 430, child: _GoalCard(goal: goal)))
-                    .toList(growable: false),
-              ),
-              const SizedBox(height: 24),
-              const _AddGoalCard(),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  SizedBox(
-                    width: 430,
-                    child: _SummaryCard(
-                      title: 'Total Saved',
-                      value: formatCurrency(overview.totalSaved),
-                      iconKey: 'savings',
-                      accent: AppTheme.secondary,
-                    ),
+        return RefreshIndicator(
+          onRefresh: () => context.read<GoalsCubit>().refresh(),
+          child: FinxlPageBody(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'FINANCIAL JOURNEY',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.6,
+                    color: AppTheme.onSurfaceVariant,
                   ),
-                  SizedBox(
-                    width: 430,
-                    child: _SummaryCard(
-                      title: 'Completed',
-                      value: overview.completedMilestone,
-                      iconKey: 'celebration',
-                      accent: AppTheme.primary,
-                      isCompact: true,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Your Goals',
+                  style: GoogleFonts.manrope(
+                    fontSize: 38,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1,
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  overview.progressMessage,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: overview.goals
+                      .map(
+                        (goal) =>
+                            SizedBox(width: 430, child: _GoalCard(goal: goal)),
+                      )
+                      .toList(growable: false),
+                ),
+                const SizedBox(height: 24),
+                const _AddGoalCard(),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    SizedBox(
+                      width: 430,
+                      child: _SummaryCard(
+                        title: 'Total Saved',
+                        value: formatCurrency(overview.totalSaved),
+                        iconKey: 'savings',
+                        accent: AppTheme.secondary,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 430,
+                      child: _SummaryCard(
+                        title: 'Completed',
+                        value: overview.completedMilestone,
+                        iconKey: 'celebration',
+                        accent: AppTheme.primary,
+                        isCompact: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _FailureState extends StatelessWidget {
+  const _FailureState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
     );
   }
 }
@@ -126,12 +165,18 @@ class _GoalCard extends StatelessWidget {
           const SizedBox(height: 28),
           Text(
             goal.title,
-            style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w800),
+            style: GoogleFonts.manrope(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             goal.subtitle,
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 24),
           Row(
@@ -143,7 +188,10 @@ class _GoalCard extends StatelessWidget {
                 children: [
                   Text(
                     formatCurrency(goal.savedAmount),
-                    style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800),
+                    style: GoogleFonts.manrope(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   Text(
                     'OF ${formatCurrency(goal.targetAmount)}',
@@ -184,39 +232,49 @@ class _AddGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      color: AppTheme.surfaceContainerLow,
-      border: Border.all(color: AppTheme.surfaceContainerHighest),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.surfaceContainerLowest,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.onSurface.withValues(alpha: 0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+    return InkWell(
+      onTap: () => context.push(AppRouter.addGoalPath),
+      borderRadius: BorderRadius.circular(28),
+      child: SectionCard(
+        color: AppTheme.surfaceContainerLow,
+        border: Border.all(color: AppTheme.surfaceContainerHighest),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.surfaceContainerLowest,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.onSurface.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.add, color: AppTheme.primary, size: 30),
             ),
-            child: const Icon(Icons.add, color: AppTheme.primary, size: 30),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Create a New Goal',
-            style: GoogleFonts.manrope(fontSize: 22, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Define your future, one focused milestone at a time.',
-            style: GoogleFonts.inter(fontSize: 14, color: AppTheme.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              'Create a New Goal',
+              style: GoogleFonts.manrope(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Define your future, one focused milestone at a time.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -259,7 +317,10 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800),
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 Text(
                   value,

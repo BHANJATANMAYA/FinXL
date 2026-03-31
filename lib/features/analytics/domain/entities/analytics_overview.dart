@@ -20,7 +20,12 @@ class AnalyticsOverview extends Equatable {
   }
 
   @override
-  List<Object> get props => [monthlyInsight, weeklyInsight, categories, insights];
+  List<Object> get props => [
+    monthlyInsight,
+    weeklyInsight,
+    categories,
+    insights,
+  ];
 }
 
 class AnalyticsPeriodInsight extends Equatable {
@@ -39,7 +44,13 @@ class AnalyticsPeriodInsight extends Equatable {
   final List<double> trendValues;
 
   @override
-  List<Object> get props => [period, headlineAmount, comparisonLabel, trendLabel, trendValues];
+  List<Object> get props => [
+    period,
+    headlineAmount,
+    comparisonLabel,
+    trendLabel,
+    trendValues,
+  ];
 }
 
 class AnalyticsCategory extends Equatable {

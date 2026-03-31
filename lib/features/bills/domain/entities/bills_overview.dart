@@ -61,15 +61,15 @@ class BillReminder extends Equatable {
 
   @override
   List<Object> get props => [
-        id,
-        title,
-        sectionLabel,
-        dueLabel,
-        amount,
-        iconKey,
-        accent,
-        category,
-        isActive,
-        isFaded,
-      ];
+    id,
+    title,
+    sectionLabel,
+    dueLabel,
+    amount,
+    iconKey,
+    accent,
+    category,
+    isActive,
+    isFaded,
+  ];
 }

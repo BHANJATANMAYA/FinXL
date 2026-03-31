@@ -21,57 +21,106 @@ class AnalyticsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AnalyticsCubit, AnalyticsState>(
       builder: (context, state) {
-        if (state.status != LoadStatus.success || state.overview == null) {
+        if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.status == LoadStatus.failure && state.overview == null) {
+          return _FailureState(
+            message: state.errorMessage ?? 'Unable to load analytics.',
+            onRetry: () => context.read<AnalyticsCubit>().load(),
+          );
         }
 
         final overview = state.overview!;
         final insight = overview.insightFor(state.selectedPeriod);
 
-        return FinxlPageBody(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _AnalyticsHeader(insight: insight, selectedPeriod: state.selectedPeriod),
-              const SizedBox(height: 24),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 720;
-                  if (isWide) {
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        return RefreshIndicator(
+          onRefresh: () => context.read<AnalyticsCubit>().refresh(),
+          child: FinxlPageBody(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _AnalyticsHeader(
+                  insight: insight,
+                  selectedPeriod: state.selectedPeriod,
+                ),
+                const SizedBox(height: 24),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth >= 720;
+                    if (isWide) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _CategoryDistribution(
+                              categories: overview.categories,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 2,
+                            child: _SpendingTrendCard(
+                              insight: insight,
+                              categories: overview.categories,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Column(
                       children: [
-                        Expanded(child: _CategoryDistribution(categories: overview.categories)),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          flex: 2,
-                          child: _SpendingTrendCard(insight: insight, categories: overview.categories),
+                        _CategoryDistribution(categories: overview.categories),
+                        const SizedBox(height: 24),
+                        _SpendingTrendCard(
+                          insight: insight,
+                          categories: overview.categories,
                         ),
                       ],
                     );
-                  }
-
-                  return Column(
-                    children: [
-                      _CategoryDistribution(categories: overview.categories),
-                      const SizedBox(height: 24),
-                      _SpendingTrendCard(insight: insight, categories: overview.categories),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: overview.insights
-                    .map((item) => SizedBox(width: 280, child: _InsightCard(insight: item)))
-                    .toList(growable: false),
-              ),
-            ],
+                  },
+                ),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: overview.insights
+                      .map(
+                        (item) => SizedBox(
+                          width: 280,
+                          child: _InsightCard(insight: item),
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _FailureState extends StatelessWidget {
+  const _FailureState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
     );
   }
 }
@@ -90,7 +139,9 @@ class _AnalyticsHeader extends StatelessWidget {
         return Flex(
           direction: isWide ? Axis.horizontal : Axis.vertical,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: isWide ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isWide
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +179,10 @@ class _AnalyticsHeader extends StatelessWidget {
             FinxlSegmentedControl<AnalyticsPeriod>(
               value: selectedPeriod,
               options: const [
-                SegmentedOption(value: AnalyticsPeriod.monthly, label: 'Monthly'),
+                SegmentedOption(
+                  value: AnalyticsPeriod.monthly,
+                  label: 'Monthly',
+                ),
                 SegmentedOption(value: AnalyticsPeriod.weekly, label: 'Weekly'),
               ],
               onChanged: context.read<AnalyticsCubit>().selectPeriod,
@@ -147,6 +201,20 @@ class _CategoryDistribution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (categories.isEmpty) {
+      return SectionCard(
+        padding: const EdgeInsets.all(28),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Text(
+              'No category data available',
+              style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
+            ),
+          ),
+        ),
+      );
+    }
     return SectionCard(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -154,7 +222,10 @@ class _CategoryDistribution extends StatelessWidget {
         children: [
           Text(
             'Category Distribution',
-            style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800),
+            style: GoogleFonts.manrope(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 28),
           Center(
@@ -252,6 +323,20 @@ class _SpendingTrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (categories.isEmpty) {
+      return SectionCard(
+        padding: const EdgeInsets.all(28),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Text(
+              'No spending data available',
+              style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
+            ),
+          ),
+        ),
+      );
+    }
     return SectionCard(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -262,9 +347,15 @@ class _SpendingTrendCard extends StatelessWidget {
             children: [
               Text(
                 'Spending Trends',
-                style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800),
+                style: GoogleFonts.manrope(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-              StatusBadge(label: insight.trendLabel, accent: AppTheme.secondary),
+              StatusBadge(
+                label: insight.trendLabel,
+                accent: AppTheme.secondary,
+              ),
             ],
           ),
           const SizedBox(height: 28),
@@ -274,7 +365,9 @@ class _SpendingTrendCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(insight.trendValues.length, (index) {
                 final value = insight.trendValues[index];
-                final isHighest = value == insight.trendValues.reduce((a, b) => a > b ? a : b);
+                final isHighest =
+                    value ==
+                    insight.trendValues.reduce((a, b) => a > b ? a : b);
                 return Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -290,10 +383,15 @@ class _SpendingTrendCard extends StatelessWidget {
                                 color: isHighest
                                     ? AppTheme.primary.withValues(alpha: 0.18)
                                     : AppTheme.surfaceContainer,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(14),
+                                ),
                                 border: isHighest
                                     ? const Border(
-                                        top: BorderSide(color: AppTheme.primary, width: 4),
+                                        top: BorderSide(
+                                          color: AppTheme.primary,
+                                          width: 4,
+                                        ),
                                       )
                                     : null,
                               ),
@@ -303,11 +401,21 @@ class _SpendingTrendCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        const ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][index],
+                        const [
+                          'MON',
+                          'TUE',
+                          'WED',
+                          'THU',
+                          'FRI',
+                          'SAT',
+                          'SUN',
+                        ][index],
                         style: GoogleFonts.inter(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: isHighest ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                          color: isHighest
+                              ? AppTheme.primary
+                              : AppTheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -332,7 +440,14 @@ class _SpendingTrendCard extends StatelessWidget {
                     color: AppTheme.primary.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.restaurant, color: AppTheme.primary),
+                  child: Icon(
+                    resolveIcon(
+                      categories.first.accent == 'primary'
+                          ? 'restaurant'
+                          : 'savings',
+                    ),
+                    color: AppTheme.primary,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -360,7 +475,10 @@ class _SpendingTrendCard extends StatelessWidget {
                 ),
                 Text(
                   formatPercent(categories.first.percentage),
-                  style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800),
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -389,7 +507,10 @@ class _InsightCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             insight.title,
-            style: GoogleFonts.manrope(fontSize: 17, fontWeight: FontWeight.w800),
+            style: GoogleFonts.manrope(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 4),
           Text(

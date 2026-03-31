@@ -4,11 +4,15 @@ import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/presentation/widgets/segmented_control.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
+import 'package:finxl/features/analytics/presentation/cubit/analytics_cubit.dart';
+import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
+import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:finxl/features/transactions/domain/entities/transaction_form_config.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transaction_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddTransactionPage extends StatelessWidget {
@@ -18,22 +22,26 @@ class AddTransactionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<TransactionCubit, TransactionState>(
       listenWhen: (previous, current) =>
-          previous.submitted != current.submitted || previous.errorMessage != current.errorMessage,
+          previous.submitted != current.submitted ||
+          previous.errorMessage != current.errorMessage,
       listener: (context, state) {
         if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage!)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         }
         if (state.submitted) {
-          Navigator.of(context).pop();
+          context.read<DashboardCubit>().refresh();
+          context.read<AnalyticsCubit>().refresh();
+          context.read<BudgetCubit>().refresh();
+          context.pop();
         }
       },
       child: Scaffold(
         backgroundColor: AppTheme.surface,
         appBar: AppBar(
           leading: IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             icon: const Icon(Icons.close),
           ),
           title: Text(
@@ -45,23 +53,49 @@ class AddTransactionPage extends StatelessWidget {
           minimum: const EdgeInsets.fromLTRB(24, 0, 24, 24),
           child: SizedBox(
             height: 60,
-            child: FilledButton(
-              onPressed: context.read<TransactionCubit>().submit,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              ),
-              child: Text(
-                'Add Transaction',
-                style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
+            child: BlocBuilder<TransactionCubit, TransactionState>(
+              builder: (context, state) {
+                return FilledButton(
+                  onPressed: state.isSubmitting
+                      ? null
+                      : context.read<TransactionCubit>().submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: state.isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          'Add Transaction',
+                          style: GoogleFonts.manrope(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                );
+              },
             ),
           ),
         ),
         body: BlocBuilder<TransactionCubit, TransactionState>(
           builder: (context, state) {
-            if (state.status != LoadStatus.success || state.config == null) {
+            if (state.status == LoadStatus.loading || state.config == null) {
               return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state.status == LoadStatus.failure) {
+              return Center(
+                child: FilledButton(
+                  onPressed: () => context.read<TransactionCubit>().load(),
+                  child: const Text('Retry'),
+                ),
+              );
             }
 
             return FinxlPageBody(
@@ -73,13 +107,21 @@ class AddTransactionPage extends StatelessWidget {
                   FinxlSegmentedControl<TransactionType>(
                     value: state.type,
                     options: const [
-                      SegmentedOption(value: TransactionType.expense, label: 'Expense'),
-                      SegmentedOption(value: TransactionType.income, label: 'Income'),
+                      SegmentedOption(
+                        value: TransactionType.expense,
+                        label: 'Expense',
+                      ),
+                      SegmentedOption(
+                        value: TransactionType.income,
+                        label: 'Income',
+                      ),
                     ],
                     onChanged: context.read<TransactionCubit>().selectType,
                   ),
                   const SizedBox(height: 40),
                   const _AmountField(),
+                  const SizedBox(height: 24),
+                  _DateSelector(selectedDate: state.date),
                   const SizedBox(height: 40),
                   _CategoryGrid(
                     config: state.config!,
@@ -139,8 +181,12 @@ class _AmountField extends StatelessWidget {
               child: TextField(
                 key: const Key('amount-field'),
                 onChanged: context.read<TransactionCubit>().updateAmount,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                ],
                 style: GoogleFonts.manrope(
                   fontSize: 64,
                   fontWeight: FontWeight.w800,
@@ -181,6 +227,38 @@ class _AmountField extends StatelessWidget {
   }
 }
 
+class _DateSelector extends StatelessWidget {
+  const _DateSelector({required this.selectedDate});
+
+  final DateTime selectedDate;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      color: AppTheme.surfaceContainerLow,
+      child: ListTile(
+        leading: const Icon(Icons.calendar_today_outlined),
+        title: const Text('Transaction date'),
+        subtitle: Text(
+          '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+        ),
+        onTap: () async {
+          final selected = await showDatePicker(
+            context: context,
+            initialDate: selectedDate,
+            firstDate: DateTime(2020),
+            lastDate: DateTime.now().add(const Duration(days: 365)),
+          );
+          if (selected != null && context.mounted) {
+            context.read<TransactionCubit>().updateDate(selected);
+          }
+        },
+      ),
+    );
+  }
+}
+
 class _CategoryGrid extends StatelessWidget {
   const _CategoryGrid({required this.config, required this.selectedCategoryId});
 
@@ -214,7 +292,9 @@ class _CategoryGrid extends StatelessWidget {
                 final category = config.categories[index];
                 final isSelected = category.id == selectedCategoryId;
                 return InkWell(
-                  onTap: () => context.read<TransactionCubit>().selectCategory(category.id),
+                  onTap: () => context.read<TransactionCubit>().selectCategory(
+                    category.id,
+                  ),
                   borderRadius: BorderRadius.circular(18),
                   child: Column(
                     children: [
@@ -223,13 +303,17 @@ class _CategoryGrid extends StatelessWidget {
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppTheme.primaryContainer.withValues(alpha: 0.22)
+                                ? AppTheme.primaryContainer.withValues(
+                                    alpha: 0.22,
+                                  )
                                 : AppTheme.surfaceContainerLowest,
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: Icon(
                             resolveIcon(category.iconKey),
-                            color: isSelected ? AppTheme.primary : AppTheme.onSurfaceVariant,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.onSurfaceVariant,
                             size: 28,
                           ),
                         ),
@@ -276,43 +360,57 @@ class _PaymentMethods extends StatelessWidget {
         Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: methods.map((method) {
-            final isSelected = method == selected;
-            final label = switch (method) {
-              PaymentMethod.upi => 'UPI',
-              PaymentMethod.cash => 'Cash',
-              PaymentMethod.card => 'Card',
-            };
-            final iconKey = switch (method) {
-              PaymentMethod.upi => 'upi',
-              PaymentMethod.cash => 'cash',
-              PaymentMethod.card => 'card',
-            };
-            return ChoiceChip(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    resolveIcon(iconKey),
-                    size: 16,
-                    color: isSelected ? Colors.white : AppTheme.onSurfaceVariant,
+          children: methods
+              .map((method) {
+                final isSelected = method == selected;
+                final label = switch (method) {
+                  PaymentMethod.upi => 'UPI',
+                  PaymentMethod.cash => 'Cash',
+                  PaymentMethod.card => 'Card',
+                };
+                final iconKey = switch (method) {
+                  PaymentMethod.upi => 'upi',
+                  PaymentMethod.cash => 'cash',
+                  PaymentMethod.card => 'card',
+                };
+                return ChoiceChip(
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        resolveIcon(iconKey),
+                        size: 16,
+                        color: isSelected
+                            ? Colors.white
+                            : AppTheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(label),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(label),
-                ],
-              ),
-              selected: isSelected,
-              onSelected: (_) => context.read<TransactionCubit>().selectPaymentMethod(method),
-              selectedColor: AppTheme.primary,
-              backgroundColor: AppTheme.surfaceContainerLowest,
-              labelStyle: GoogleFonts.inter(
-                color: isSelected ? Colors.white : AppTheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-              ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-              side: BorderSide(color: AppTheme.surfaceContainerHighest.withValues(alpha: 0.4)),
-            );
-          }).toList(growable: false),
+                  selected: isSelected,
+                  onSelected: (_) => context
+                      .read<TransactionCubit>()
+                      .selectPaymentMethod(method),
+                  selectedColor: AppTheme.primary,
+                  backgroundColor: AppTheme.surfaceContainerLowest,
+                  labelStyle: GoogleFonts.inter(
+                    color: isSelected
+                        ? Colors.white
+                        : AppTheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  side: BorderSide(
+                    color: AppTheme.surfaceContainerHighest.withValues(
+                      alpha: 0.4,
+                    ),
+                  ),
+                );
+              })
+              .toList(growable: false),
         ),
       ],
     );

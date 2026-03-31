@@ -1,9 +1,9 @@
+import 'package:finxl/core/navigation/app_router.dart';
+import 'package:finxl/core/notifications/local_notification_service.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/features/analytics/data/repositories/analytics_repository_impl.dart';
 import 'package:finxl/features/analytics/domain/repositories/analytics_repository.dart';
 import 'package:finxl/features/analytics/presentation/cubit/analytics_cubit.dart';
-import 'package:finxl/features/app_shell/presentation/cubit/navigation_cubit.dart';
-import 'package:finxl/features/app_shell/presentation/pages/app_shell_page.dart';
 import 'package:finxl/features/bills/data/repositories/bills_repository_impl.dart';
 import 'package:finxl/features/bills/domain/repositories/bills_repository.dart';
 import 'package:finxl/features/bills/presentation/cubit/bills_cubit.dart';
@@ -26,59 +26,62 @@ class FinXL extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final notificationService = LocalNotificationService.instance;
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<DashboardRepository>(
-          create: (_) => const DashboardRepositoryImpl(),
+          create: (_) => DashboardRepositoryImpl(),
         ),
         RepositoryProvider<AnalyticsRepository>(
-          create: (_) => const AnalyticsRepositoryImpl(),
+          create: (_) => AnalyticsRepositoryImpl(),
         ),
         RepositoryProvider<GoalsRepository>(
-          create: (_) => const GoalsRepositoryImpl(),
+          create: (_) => GoalsRepositoryImpl(),
         ),
         RepositoryProvider<BudgetRepository>(
-          create: (_) => const BudgetRepositoryImpl(),
+          create: (_) => BudgetRepositoryImpl(),
         ),
         RepositoryProvider<BillsRepository>(
-          create: (_) => const BillsRepositoryImpl(),
+          create: (_) => BillsRepositoryImpl(),
         ),
         RepositoryProvider<TransactionRepository>(
-          create: (_) => const TransactionRepositoryImpl(),
+          create: (_) => TransactionRepositoryImpl(),
+        ),
+        RepositoryProvider<LocalNotificationService>.value(
+          value: notificationService,
         ),
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => NavigationCubit()),
           BlocProvider(
-            create: (context) => DashboardCubit(
-              context.read<DashboardRepository>(),
-            )..load(),
+            create: (context) =>
+                DashboardCubit(context.read<DashboardRepository>())..load(),
           ),
           BlocProvider(
-            create: (context) => AnalyticsCubit(
-              context.read<AnalyticsRepository>(),
-            )..load(),
+            create: (context) =>
+                AnalyticsCubit(context.read<AnalyticsRepository>())..load(),
           ),
           BlocProvider(
-            create: (context) => GoalsCubit(
-              context.read<GoalsRepository>(),
-            )..load(),
+            create: (context) =>
+                GoalsCubit(context.read<GoalsRepository>())..load(),
           ),
           BlocProvider(
-            create: (context) => BudgetCubit(
-              context.read<BudgetRepository>(),
-            )..load(),
+            create: (context) =>
+                BudgetCubit(context.read<BudgetRepository>())..load(),
           ),
           BlocProvider(
-            create: (context) => BillsCubit(context.read<BillsRepository>())..load(),
+            create: (context) => BillsCubit(
+              context.read<BillsRepository>(),
+              context.read<LocalNotificationService>(),
+            )..load(),
           ),
         ],
-        child: MaterialApp(
+        child: MaterialApp.router(
           title: 'FinXL',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          home: const AppShellPage(),
+          routerConfig: AppRouter.router,
         ),
       ),
     );

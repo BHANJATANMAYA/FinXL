@@ -16,7 +16,13 @@ class BudgetOverview extends Equatable {
   final List<BudgetCategory> categories;
 
   @override
-  List<Object> get props => [totalBudget, remainingBudget, alertTitle, alertMessage, categories];
+  List<Object> get props => [
+    totalBudget,
+    remainingBudget,
+    alertTitle,
+    alertMessage,
+    categories,
+  ];
 }
 
 class BudgetCategory extends Equatable {
@@ -41,5 +47,13 @@ class BudgetCategory extends Equatable {
   double get progress => spent / limit;
 
   @override
-  List<Object> get props => [title, iconKey, statusLabel, accent, spent, limit, exceeded];
+  List<Object> get props => [
+    title,
+    iconKey,
+    statusLabel,
+    accent,
+    spent,
+    limit,
+    exceeded,
+  ];
 }

@@ -14,7 +14,12 @@ class GoalsOverview extends Equatable {
   final String completedMilestone;
 
   @override
-  List<Object> get props => [progressMessage, goals, totalSaved, completedMilestone];
+  List<Object> get props => [
+    progressMessage,
+    goals,
+    totalSaved,
+    completedMilestone,
+  ];
 }
 
 class SavingsGoal extends Equatable {
@@ -39,5 +44,13 @@ class SavingsGoal extends Equatable {
   double get progress => savedAmount / targetAmount;
 
   @override
-  List<Object?> get props => [title, subtitle, savedAmount, targetAmount, iconKey, accent, badgeLabel];
+  List<Object?> get props => [
+    title,
+    subtitle,
+    savedAmount,
+    targetAmount,
+    iconKey,
+    accent,
+    badgeLabel,
+  ];
 }

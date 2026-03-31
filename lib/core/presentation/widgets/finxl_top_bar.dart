@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
-  const FinxlTopBar({super.key});
+  const FinxlTopBar({this.onProfileTap, this.onNotificationTap, super.key});
+
+  final VoidCallback? onProfileTap;
+  final VoidCallback? onNotificationTap;
 
   @override
   Size get preferredSize => const Size.fromHeight(84);
@@ -18,31 +21,38 @@ class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.surfaceContainer,
+            InkWell(
+              onTap: onProfileTap,
+              borderRadius: BorderRadius.circular(999),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.surfaceContainer,
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
                   ),
-                  child: const Icon(Icons.person, color: AppTheme.onSurfaceVariant),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'FinXL',
-                  style: GoogleFonts.manrope(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1,
-                    color: AppTheme.onSurface,
+                  const SizedBox(width: 12),
+                  Text(
+                    'FinXL',
+                    style: GoogleFonts.manrope(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1,
+                      color: AppTheme.onSurface,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             IconButton(
-              onPressed: () {},
+              onPressed: onNotificationTap,
               icon: const Icon(
                 Icons.notifications_outlined,
                 color: AppTheme.onSurfaceVariant,

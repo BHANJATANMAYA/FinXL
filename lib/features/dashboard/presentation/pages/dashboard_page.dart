@@ -18,36 +18,72 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DashboardCubit, DashboardState>(
       builder: (context, state) {
-        if (state.status != LoadStatus.success || state.snapshot == null) {
+        if (state.status == LoadStatus.loading && state.snapshot == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
+        if (state.status == LoadStatus.failure && state.snapshot == null) {
+          return _FailureState(
+            message: state.errorMessage ?? 'Unable to load dashboard data.',
+            onRetry: () => context.read<DashboardCubit>().load(),
+          );
+        }
+
         final snapshot = state.snapshot!;
-        return FinxlPageBody(
-          maxWidth: 760,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _BalanceSection(snapshot: snapshot),
-              const SizedBox(height: 32),
-              _MonthlyFlowCard(snapshot: snapshot),
-              const SizedBox(height: 16),
-              _WeeklyTrendCard(snapshot: snapshot),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: snapshot.highlights
-                    .map((highlight) => SizedBox(
+        return RefreshIndicator(
+          onRefresh: () => context.read<DashboardCubit>().refresh(),
+          child: FinxlPageBody(
+            maxWidth: 760,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _BalanceSection(snapshot: snapshot),
+                const SizedBox(height: 32),
+                _MonthlyFlowCard(snapshot: snapshot),
+                const SizedBox(height: 16),
+                _WeeklyTrendCard(snapshot: snapshot),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: snapshot.highlights
+                      .map(
+                        (highlight) => SizedBox(
                           width: 342,
                           child: _HighlightCard(highlight: highlight),
-                        ))
-                    .toList(growable: false),
-              ),
-            ],
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _FailureState extends StatelessWidget {
+  const _FailureState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -191,7 +227,9 @@ class _MetricColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         if (caption.isNotEmpty)
           Text(
@@ -277,7 +315,9 @@ class _WeeklyTrendCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(snapshot.weeklyTrend.length, (index) {
-                final peak = snapshot.weeklyTrend.reduce((a, b) => a > b ? a : b);
+                final peak = snapshot.weeklyTrend.reduce(
+                  (a, b) => a > b ? a : b,
+                );
                 final isPeak = snapshot.weeklyTrend[index] == peak;
                 return Expanded(
                   child: Padding(

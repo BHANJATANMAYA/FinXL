@@ -1,4 +1,5 @@
 import 'package:finxl/core/common/load_status.dart';
+import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
 import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/theme/app_theme.dart';
@@ -8,6 +9,7 @@ import 'package:finxl/features/bills/domain/entities/bills_overview.dart';
 import 'package:finxl/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class BillsPage extends StatelessWidget {
@@ -17,131 +19,192 @@ class BillsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<BillsCubit, BillsState>(
       builder: (context, state) {
-        if (state.status != LoadStatus.success || state.overview == null) {
+        if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final overview = state.overview!;
-        final reminders = _filterReminders(overview.reminders, state.selectedFilter);
-        final dueThisWeek = reminders.where((item) => item.sectionLabel == 'Due This Week').toList(growable: false);
-        final later = reminders.where((item) => item.sectionLabel == 'Later This Month').toList(growable: false);
+        if (state.status == LoadStatus.failure && state.overview == null) {
+          return _FailureState(
+            message: state.errorMessage ?? 'Unable to load reminders.',
+            onRetry: () => context.read<BillsCubit>().load(),
+          );
+        }
 
-        return FinxlPageBody(
-          maxWidth: 820,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'SCHEDULED FOR JUNE',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.6,
-                  color: AppTheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    formatCurrency(overview.scheduledAmount, decimals: 2),
-                    style: GoogleFonts.manrope(fontSize: 36, fontWeight: FontWeight.w800),
+        final overview = state.overview!;
+        final reminders = _filterReminders(
+          overview.reminders,
+          state.selectedFilter,
+        );
+        final dueThisWeek = reminders
+            .where((item) => item.sectionLabel == 'Due This Week')
+            .toList(growable: false);
+        final later = reminders
+            .where((item) => item.sectionLabel == 'Later This Month')
+            .toList(growable: false);
+
+        return RefreshIndicator(
+          onRefresh: () => context.read<BillsCubit>().refresh(),
+          child: FinxlPageBody(
+            maxWidth: 820,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'UPCOMING REMINDERS',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.6,
+                    color: AppTheme.onSurfaceVariant,
                   ),
-                  Text(
-                    '${overview.reminderCount} reminders',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Every active reminder sends a notification 48 hours before its due date.',
-                style: GoogleFonts.inter(fontSize: 14, height: 1.5, color: AppTheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 20),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: BillFilter.values.map((filter) {
-                    final isSelected = filter == state.selectedFilter;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: ChoiceChip(
-                        label: Text(_filterLabel(filter)),
-                        selected: isSelected,
-                        onSelected: (_) => context.read<BillsCubit>().selectFilter(filter),
-                        selectedColor: AppTheme.primary,
-                        labelStyle: GoogleFonts.inter(
-                          color: isSelected ? Colors.white : AppTheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        side: BorderSide(color: AppTheme.surfaceContainerHighest.withValues(alpha: 0.4)),
-                        backgroundColor: AppTheme.surfaceContainerLowest,
-                      ),
-                    );
-                  }).toList(growable: false),
                 ),
-              ),
-              const SizedBox(height: 24),
-              if (dueThisWeek.isNotEmpty) ...[
-                const _SectionTitle(title: 'DUE THIS WEEK'),
-                const SizedBox(height: 16),
-                ...dueThisWeek.map((reminder) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _ReminderTile(reminder: reminder),
-                    )),
-              ],
-              if (later.isNotEmpty) ...[
-                const _SectionTitle(title: 'LATER THIS MONTH'),
-                const SizedBox(height: 16),
-                ...later.map((reminder) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _ReminderTile(reminder: reminder),
-                    )),
-              ],
-              const SizedBox(height: 8),
-              SectionCard(
-                color: AppTheme.surfaceContainerLow,
-                border: Border.all(color: AppTheme.surfaceContainerHighest),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Icon(Icons.add_circle_outline, color: AppTheme.onSurfaceVariant),
-                    const SizedBox(width: 12),
                     Text(
-                      'New Reminder',
+                      formatCurrency(overview.scheduledAmount, decimals: 2),
                       style: GoogleFonts.manrope(
-                        fontSize: 16,
+                        fontSize: 36,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      '${overview.reminderCount} reminders',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primary,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Every active reminder sends a notification 48 hours before its due date.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: BillFilter.values
+                        .map((filter) {
+                          final isSelected = filter == state.selectedFilter;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: ChoiceChip(
+                              label: Text(_filterLabel(filter)),
+                              selected: isSelected,
+                              onSelected: (_) => context
+                                  .read<BillsCubit>()
+                                  .selectFilter(filter),
+                              selectedColor: AppTheme.primary,
+                              labelStyle: GoogleFonts.inter(
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppTheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              side: BorderSide(
+                                color: AppTheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.4),
+                              ),
+                              backgroundColor: AppTheme.surfaceContainerLowest,
+                            ),
+                          );
+                        })
+                        .toList(growable: false),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (dueThisWeek.isNotEmpty) ...[
+                  const _SectionTitle(title: 'DUE THIS WEEK'),
+                  const SizedBox(height: 16),
+                  ...dueThisWeek.map(
+                    (reminder) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _ReminderTile(reminder: reminder),
+                    ),
+                  ),
+                ],
+                if (later.isNotEmpty) ...[
+                  const _SectionTitle(title: 'LATER THIS MONTH'),
+                  const SizedBox(height: 16),
+                  ...later.map(
+                    (reminder) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _ReminderTile(reminder: reminder),
+                    ),
+                  ),
+                ],
+                if (reminders.isEmpty)
+                  SectionCard(
+                    child: Text(
+                      'No reminders match the selected filter yet.',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () => context.push(AppRouter.addBillPath),
+                  borderRadius: BorderRadius.circular(28),
+                  child: SectionCard(
+                    color: AppTheme.surfaceContainerLow,
+                    border: Border.all(color: AppTheme.surfaceContainerHighest),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.add_circle_outline,
+                          color: AppTheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'New Reminder',
+                          style: GoogleFonts.manrope(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  List<BillReminder> _filterReminders(List<BillReminder> reminders, BillFilter filter) {
-    return reminders.where((reminder) {
-      return switch (filter) {
-        BillFilter.all => true,
-        BillFilter.subscriptions => reminder.category == BillCategory.subscription,
-        BillFilter.bills => reminder.category == BillCategory.bill,
-        BillFilter.emis => reminder.category == BillCategory.emi,
-      };
-    }).toList(growable: false);
+  List<BillReminder> _filterReminders(
+    List<BillReminder> reminders,
+    BillFilter filter,
+  ) {
+    return reminders
+        .where((reminder) {
+          return switch (filter) {
+            BillFilter.all => true,
+            BillFilter.subscriptions =>
+              reminder.category == BillCategory.subscription,
+            BillFilter.bills => reminder.category == BillCategory.bill,
+            BillFilter.emis => reminder.category == BillCategory.emi,
+          };
+        })
+        .toList(growable: false);
   }
 
   String _filterLabel(BillFilter filter) {
@@ -151,6 +214,27 @@ class BillsPage extends StatelessWidget {
       BillFilter.bills => 'Bills',
       BillFilter.emis => 'EMIs',
     };
+  }
+}
+
+class _FailureState extends StatelessWidget {
+  const _FailureState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
   }
 }
 
@@ -185,7 +269,9 @@ class _ReminderTile extends StatelessWidget {
       opacity: reminder.isFaded ? 0.72 : 1,
       child: SectionCard(
         padding: const EdgeInsets.all(20),
-        border: Border.all(color: AppTheme.surfaceContainerHighest.withValues(alpha: 0.24)),
+        border: Border.all(
+          color: AppTheme.surfaceContainerHighest.withValues(alpha: 0.24),
+        ),
         child: Row(
           children: [
             Container(
@@ -204,19 +290,26 @@ class _ReminderTile extends StatelessWidget {
                 children: [
                   Text(
                     reminder.title,
-                    style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800),
+                    style: GoogleFonts.manrope(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${reminder.dueLabel}  •  ${formatCurrency(reminder.amount, decimals: 2)}',
-                    style: GoogleFonts.inter(fontSize: 12, color: AppTheme.onSurfaceVariant),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             ),
             Switch.adaptive(
               value: reminder.isActive,
-              onChanged: (_) => context.read<BillsCubit>().toggleReminder(reminder.id),
+              onChanged: (_) =>
+                  context.read<BillsCubit>().toggleReminder(reminder.id),
               activeThumbColor: Colors.white,
               activeTrackColor: AppTheme.primary,
               inactiveTrackColor: AppTheme.surfaceContainerHigh,

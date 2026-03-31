@@ -1,23 +1,75 @@
+import 'package:finxl/core/database/local_database_service.dart';
+import 'package:finxl/core/models/transaction.dart' as core;
+import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/features/transactions/domain/entities/transaction_form_config.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 
 class TransactionRepositoryImpl implements TransactionRepository {
-  const TransactionRepositoryImpl();
+  TransactionRepositoryImpl({LocalDatabaseService? databaseService})
+    : _databaseService = databaseService ?? LocalDatabaseService.instance;
+
+  final LocalDatabaseService _databaseService;
 
   @override
   Future<TransactionFormConfig> fetchConfig() async {
     return const TransactionFormConfig(
-      categories: [
-        TransactionCategory(id: 'food', label: 'Food', iconKey: 'restaurant'),
-        TransactionCategory(id: 'shopping', label: 'Shopping', iconKey: 'shopping'),
-        TransactionCategory(id: 'travel', label: 'Travel', iconKey: 'travel'),
-        TransactionCategory(id: 'health', label: 'Health', iconKey: 'health'),
-        TransactionCategory(id: 'bills', label: 'Bills', iconKey: 'bill'),
-        TransactionCategory(id: 'subscriptions', label: 'Subs', iconKey: 'subscription'),
-        TransactionCategory(id: 'fitness', label: 'Gym', iconKey: 'gym'),
-        TransactionCategory(id: 'other', label: 'Other', iconKey: 'other'),
+      categories: FinanceLookups.transactionCategories,
+      paymentMethods: [
+        PaymentMethod.upi,
+        PaymentMethod.cash,
+        PaymentMethod.card,
       ],
-      paymentMethods: [PaymentMethod.upi, PaymentMethod.cash, PaymentMethod.card],
     );
+  }
+
+  @override
+  Future<List<core.Transaction>> getTransactions() async {
+    final db = await _databaseService.database;
+    final rows = await db.query(
+      LocalDatabaseService.transactionsTable,
+      orderBy: 'date DESC',
+    );
+
+    return rows.map(core.Transaction.fromMap).toList(growable: false);
+  }
+
+  @override
+  Future<core.Transaction?> getTransactionById(int id) async {
+    final row = await _databaseService.queryById(
+      LocalDatabaseService.transactionsTable,
+      id,
+    );
+
+    if (row == null) return null;
+    return core.Transaction.fromMap(row);
+  }
+
+  @override
+  Future<int> addTransaction(core.Transaction transaction) async {
+    final values = Map<String, Object?>.from(transaction.toMap())..remove('id');
+    return _databaseService.insert(
+      LocalDatabaseService.transactionsTable,
+      values,
+    );
+  }
+
+  @override
+  Future<void> updateTransaction(core.Transaction transaction) async {
+    final id = transaction.id;
+    if (id == null) {
+      throw ArgumentError('Transaction id is required for update.');
+    }
+
+    final values = Map<String, Object?>.from(transaction.toMap())..remove('id');
+    await _databaseService.update(
+      LocalDatabaseService.transactionsTable,
+      values,
+      id,
+    );
+  }
+
+  @override
+  Future<void> deleteTransaction(int id) async {
+    await _databaseService.delete(LocalDatabaseService.transactionsTable, id);
   }
 }

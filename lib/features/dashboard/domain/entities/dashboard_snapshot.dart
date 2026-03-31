@@ -23,15 +23,15 @@ class DashboardSnapshot extends Equatable {
 
   @override
   List<Object> get props => [
-        totalBalance,
-        savedThisMonth,
-        monthlyIncome,
-        monthlySpent,
-        remainingBudgetRatio,
-        daysLeft,
-        weeklyTrend,
-        highlights,
-      ];
+    totalBalance,
+    savedThisMonth,
+    monthlyIncome,
+    monthlySpent,
+    remainingBudgetRatio,
+    daysLeft,
+    weeklyTrend,
+    highlights,
+  ];
 }
 
 class DashboardHighlight extends Equatable {
