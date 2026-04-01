@@ -43,6 +43,33 @@ class BudgetPage extends StatelessWidget {
             ? 0.0
             : overview.remainingBudget / overview.totalBudget;
 
+        Color alertColor;
+        Color alertBgColor;
+        Color alertIconBgColor;
+        IconData alertIcon;
+
+        if (overview.alertTitle == 'Critical Alert') {
+          alertColor = AppTheme.danger;
+          alertBgColor = const Color(0xFFFFF1F0);
+          alertIconBgColor = const Color(0xFFFFDAD6);
+          alertIcon = Icons.warning_amber_rounded;
+        } else if (overview.alertTitle == 'Heads Up') {
+          alertColor = AppTheme.warning;
+          alertBgColor = const Color(0xFFFFFBEB);
+          alertIconBgColor = const Color(0xFFFEF3C7);
+          alertIcon = Icons.info_outline_rounded;
+        } else if (overview.alertTitle == 'No Budgets Yet') {
+          alertColor = AppTheme.secondary;
+          alertBgColor = const Color(0xFFF0F9FF);
+          alertIconBgColor = const Color(0xFFE0F2FE);
+          alertIcon = Icons.account_balance_wallet_outlined;
+        } else {
+          alertColor = AppTheme.primary;
+          alertBgColor = const Color(0xFFF0FDF4);
+          alertIconBgColor = const Color(0xFFDCFCE7);
+          alertIcon = Icons.check_circle_outline_rounded;
+        }
+
         return RefreshIndicator(
           onRefresh: () => context.read<BudgetCubit>().refresh(),
           child: FinxlPageBody(
@@ -109,22 +136,22 @@ class BudgetPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 SectionCard(
-                  color: const Color(0xFFFFF1F0),
-                  border: const Border(
-                    left: BorderSide(color: AppTheme.danger, width: 4),
+                  color: alertBgColor,
+                  border: Border(
+                    left: BorderSide(color: alertColor, width: 4),
                   ),
                   child: Row(
                     children: [
                       Container(
                         width: 48,
                         height: 48,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFFDAD6),
+                        decoration: BoxDecoration(
+                          color: alertIconBgColor,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.warning_amber_rounded,
-                          color: AppTheme.danger,
+                        child: Icon(
+                          alertIcon,
+                          color: alertColor,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -137,14 +164,14 @@ class BudgetPage extends StatelessWidget {
                               style: GoogleFonts.manrope(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                color: AppTheme.danger,
+                                color: alertColor,
                               ),
                             ),
                             Text(
                               overview.alertMessage,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: AppTheme.danger.withValues(alpha: 0.8),
+                                color: alertColor.withValues(alpha: 0.8),
                               ),
                             ),
                           ],
@@ -256,7 +283,14 @@ class _BudgetCard extends StatelessWidget {
                 ),
                 child: Icon(resolveIcon(category.iconKey), color: accent),
               ),
-              StatusBadge(label: category.statusLabel, accent: accent),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  StatusBadge(label: category.statusLabel, accent: accent),
+                  const SizedBox(width: 4),
+                  _BudgetMenuBuilder(category: category),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -376,10 +410,19 @@ class _ExceededCard extends StatelessWidget {
                           ],
                         ),
                         if (isWide)
-                          const StatusBadge(
-                            label: 'Exceeded',
-                            accent: AppTheme.danger,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const StatusBadge(
+                                label: 'Exceeded',
+                                accent: AppTheme.danger,
+                              ),
+                              const SizedBox(width: 4),
+                              _BudgetMenuBuilder(category: category),
+                            ],
                           ),
+                        if (!isWide)
+                          _BudgetMenuBuilder(category: category),
                       ],
                     ),
                     if (!isWide) ...[
@@ -430,3 +473,115 @@ class _ExceededCard extends StatelessWidget {
     );
   }
 }
+
+class _BudgetMenuBuilder extends StatelessWidget {
+  const _BudgetMenuBuilder({required this.category});
+
+  final BudgetCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, color: AppTheme.onSurfaceVariant),
+      color: AppTheme.surfaceContainerLowest,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      onSelected: (value) {
+        if (value == 'edit') {
+          context.push(AppRouter.addBudgetPath, extra: category);
+        } else if (value == 'delete') {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: AppTheme.surfaceContainerLowest,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: Text(
+                'Delete Budget',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+              content: Text(
+                'Are you sure you want to delete the ${category.title} budget?',
+                style: GoogleFonts.inter(
+                  color: AppTheme.onSurfaceVariant,
+                  fontSize: 16,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => ctx.pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.onSurfaceVariant,
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    context.read<BudgetCubit>().deleteBudget(category.id!);
+                    ctx.pop();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.danger,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: Text(
+                    'Delete',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              const Icon(Icons.edit_outlined, size: 20, color: AppTheme.onSurface),
+              const SizedBox(width: 12),
+              Text(
+                'Edit Budget',
+                style: GoogleFonts.inter(
+                  color: AppTheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              const Icon(Icons.delete_outline, color: AppTheme.danger, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'Delete Budget',
+                style: GoogleFonts.inter(
+                  color: AppTheme.danger,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+

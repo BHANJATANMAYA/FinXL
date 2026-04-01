@@ -71,6 +71,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
               budget.limitAmount,
             );
             return BudgetCategory(
+              id: budget.id,
               title: budget.categoryName,
               iconKey: FinanceLookups.budgetIconKey(budget.categoryName),
               statusLabel: FinanceLookups.budgetStatusLabel(progress),

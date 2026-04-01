@@ -3,6 +3,7 @@ import 'package:finxl/features/analytics/presentation/pages/analytics_page.dart'
 import 'package:finxl/features/app_shell/presentation/pages/app_shell_page.dart';
 import 'package:finxl/features/bills/presentation/pages/add_bill_page.dart';
 import 'package:finxl/features/bills/presentation/pages/bills_page.dart';
+import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
 import 'package:finxl/features/budget/presentation/pages/add_budget_page.dart';
 import 'package:finxl/features/budget/presentation/pages/budget_page.dart';
 import 'package:finxl/features/dashboard/presentation/pages/dashboard_page.dart';
@@ -114,7 +115,7 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         path: addBudgetPath,
         pageBuilder: (context, state) =>
-            _buildPage(state, const AddBudgetPage()),
+            _buildPage(state, AddBudgetPage(budgetToEdit: state.extra as BudgetCategory?)),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

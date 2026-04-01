@@ -1,6 +1,7 @@
 import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
+import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
 import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,7 +9,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddBudgetPage extends StatefulWidget {
-  const AddBudgetPage({super.key});
+  const AddBudgetPage({super.key, this.budgetToEdit});
+
+  final BudgetCategory? budgetToEdit;
 
   @override
   State<AddBudgetPage> createState() => _AddBudgetPageState();
@@ -16,8 +19,21 @@ class AddBudgetPage extends StatefulWidget {
 
 class _AddBudgetPageState extends State<AddBudgetPage> {
   final _formKey = GlobalKey<FormState>();
-  final _limitController = TextEditingController();
-  String _category = FinanceLookups.transactionCategories.first.label;
+  late final TextEditingController _limitController;
+  late String _category;
+
+  bool get _isEdit => widget.budgetToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _limitController = TextEditingController(
+      text: _isEdit ? widget.budgetToEdit!.limit.toStringAsFixed(0) : '',
+    );
+    _category = _isEdit
+        ? widget.budgetToEdit!.title
+        : FinanceLookups.transactionCategories.first.label;
+  }
 
   @override
   void dispose() {
@@ -35,7 +51,7 @@ class _AddBudgetPageState extends State<AddBudgetPage> {
           icon: const Icon(Icons.close),
         ),
         title: Text(
-          'Create Budget',
+          _isEdit ? 'Edit Budget' : 'Create Budget',
           style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
         ),
       ),
@@ -61,6 +77,7 @@ class _AddBudgetPageState extends State<AddBudgetPage> {
                     children: [
                       DropdownButtonFormField<String>(
                         initialValue: _category,
+                        borderRadius: BorderRadius.circular(24),
                         decoration: const InputDecoration(
                           labelText: 'Category',
                         ),
@@ -90,7 +107,7 @@ class _AddBudgetPageState extends State<AddBudgetPage> {
                             : null,
                         decoration: const InputDecoration(
                           labelText: 'Monthly limit',
-                          hintText: '15000',
+                          hintText: 'Enter monthly budget limit',
                         ),
                       ),
                     ],
@@ -111,7 +128,7 @@ class _AddBudgetPageState extends State<AddBudgetPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Save Budget'),
+                          : Text(_isEdit ? 'Update Budget' : 'Save Budget'),
                     );
                   },
                 ),
@@ -122,6 +139,31 @@ class _AddBudgetPageState extends State<AddBudgetPage> {
       ),
     );
   }
+
+  // Future<void> _submit() async {
+  //   if (!_formKey.currentState!.validate()) return;
+
+  //   final limit = double.tryParse(_limitController.text.trim());
+  //   if (limit == null || limit <= 0) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Enter a valid budget limit.')),
+  //     );
+  //     return;
+  //   }
+
+  //   final success = _isEdit
+  //       ? await context.read<BudgetCubit>().updateBudget(
+  //           id: widget.budgetToEdit!.id!,
+  //           categoryName: _category,
+  //           limitAmount: limit,
+  //         )
+  //       : await context.read<BudgetCubit>().createBudget(
+  //           categoryName: _category,
+  //           limitAmount: limit,
+  //         );
+
+  //   if (success && mounted) context.pop();
+  // }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -134,10 +176,39 @@ class _AddBudgetPageState extends State<AddBudgetPage> {
       return;
     }
 
-    final success = await context.read<BudgetCubit>().createBudget(
-      categoryName: _category,
-      limitAmount: limit,
-    );
-    if (success && mounted) context.pop();
+    final cubit = context.read<BudgetCubit>();
+
+    bool success = false;
+
+    if (_isEdit) {
+      final id = widget.budgetToEdit?.id;
+      if (id == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Invalid budget data.')));
+        return;
+      }
+
+      success = await cubit.updateBudget(
+        id: id,
+        categoryName: _category,
+        limitAmount: limit,
+      );
+    } else {
+      success = await cubit.createBudget(
+        categoryName: _category,
+        limitAmount: limit,
+      );
+    }
+
+    if (!mounted) return;
+
+    if (success) {
+      context.pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to save budget. Try again.')),
+      );
+    }
   }
 }

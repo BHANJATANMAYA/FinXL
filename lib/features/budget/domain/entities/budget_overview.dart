@@ -27,6 +27,7 @@ class BudgetOverview extends Equatable {
 
 class BudgetCategory extends Equatable {
   const BudgetCategory({
+    this.id,
     required this.title,
     required this.iconKey,
     required this.statusLabel,
@@ -35,6 +36,8 @@ class BudgetCategory extends Equatable {
     required this.limit,
     this.exceeded = false,
   });
+
+  final int? id;
 
   final String title;
   final String iconKey;
@@ -47,7 +50,8 @@ class BudgetCategory extends Equatable {
   double get progress => spent / limit;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
+    id,
     title,
     iconKey,
     statusLabel,

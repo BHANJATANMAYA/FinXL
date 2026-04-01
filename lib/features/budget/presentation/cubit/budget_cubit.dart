@@ -60,6 +60,40 @@ class BudgetCubit extends Cubit<BudgetState> {
       return false;
     }
   }
+
+  Future<bool> updateBudget({
+    required int id,
+    required String categoryName,
+    required double limitAmount,
+  }) async {
+    emit(state.copyWith(isSaving: true, errorMessage: null));
+    try {
+      await _repository.updateBudget(
+        Budget(
+          id: id,
+          categoryName: categoryName,
+          limitAmount: limitAmount,
+          spentAmount: 0,
+        ),
+      );
+      await load(showLoading: false);
+      return true;
+    } catch (_) {
+      emit(
+        state.copyWith(isSaving: false, errorMessage: 'Unable to update budget.'),
+      );
+      return false;
+    }
+  }
+
+  Future<void> deleteBudget(int id) async {
+    try {
+      await _repository.deleteBudget(id);
+      await load(showLoading: false);
+    } catch (_) {
+      emit(state.copyWith(errorMessage: 'Unable to delete budget.'));
+    }
+  }
 }
 
 class BudgetState extends Equatable {
