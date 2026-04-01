@@ -190,6 +190,9 @@ class FinanceLookups {
     final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
     final difference = due.difference(today).inDays;
 
+    if (difference < 0) {
+      return 'Overdue';
+    }
     if (difference <= 7) {
       return 'Due This Week';
     }
@@ -200,6 +203,12 @@ class FinanceLookups {
   }
 
   static String formatShortDate(DateTime date) {
+    final month = shortMonthLabel(date);
+    final day = date.day.toString().padLeft(2, '0');
+    return '$month $day';
+  }
+
+  static String shortMonthLabel(DateTime date) {
     const months = [
       'Jan',
       'Feb',
@@ -215,9 +224,13 @@ class FinanceLookups {
       'Dec',
     ];
 
-    final month = months[date.month - 1];
-    final day = date.day.toString().padLeft(2, '0');
-    return '$month $day';
+    return months[date.month - 1];
+  }
+
+  static String shortWeekdayLabel(DateTime date, {bool uppercase = false}) {
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final label = weekdays[date.weekday - 1];
+    return uppercase ? label.toUpperCase() : label;
   }
 
   static double safeRatio(double numerator, double denominator) {

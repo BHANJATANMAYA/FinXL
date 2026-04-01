@@ -275,8 +275,6 @@ class _WeeklyTrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
     return SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,9 +344,9 @@ class _WeeklyTrendCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(days.length, (index) {
+            children: List.generate(snapshot.weeklyTrendLabels.length, (index) {
               return Text(
-                days[index],
+                snapshot.weeklyTrendLabels[index],
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,

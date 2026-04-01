@@ -4,6 +4,7 @@ import 'package:finxl/core/database/local_database_service.dart';
 import 'package:finxl/core/models/budget.dart';
 import 'package:finxl/core/models/goal.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
+import 'package:finxl/core/utils/budget_spending.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/features/analytics/domain/entities/analytics_overview.dart';
 import 'package:finxl/features/analytics/domain/repositories/analytics_repository.dart';
@@ -17,9 +18,11 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   @override
   Future<AnalyticsOverview> fetchOverview() async {
     final transactions = await _getTransactions();
-    final budgets = await _getBudgets();
-    final goals = await _getGoals();
     final now = DateTime.now();
+    final budgets = await _getBudgets(transactions, now);
+    final goals = await _getGoals();
+    final monthlyTrend = _buildMonthlyTrend(transactions, now);
+    final weeklyTrend = _buildWeeklyTrend(transactions, now);
 
     final monthStart = DateTime(now.year, now.month);
     final nextMonthStart = DateTime(now.year, now.month + 1);
@@ -84,7 +87,8 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
           'last month',
         ),
         trendLabel: monthlyIncome >= monthlyExpense ? 'SURPLUS' : 'DEFICIT',
-        trendValues: _buildMonthlyTrend(transactions, now),
+        trendValues: monthlyTrend.values,
+        trendLabels: monthlyTrend.labels,
       ),
       weeklyInsight: AnalyticsPeriodInsight(
         period: AnalyticsPeriod.weekly,
@@ -97,7 +101,8 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
         trendLabel: weeklyExpense <= previousWeekExpense
             ? 'ON TRACK'
             : 'RISING',
-        trendValues: _buildWeeklyTrend(transactions, now),
+        trendValues: weeklyTrend.values,
+        trendLabels: weeklyTrend.labels,
       ),
       categories: _buildCategoryBreakdown(monthlyTransactions),
       insights: _buildInsights(monthlyTransactions, budgets, goals),
@@ -110,10 +115,18 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     return rows.map(core.Transaction.fromMap).toList(growable: false);
   }
 
-  Future<List<Budget>> _getBudgets() async {
+  Future<List<Budget>> _getBudgets(
+    List<core.Transaction> transactions,
+    DateTime now,
+  ) async {
     final db = await _databaseService.database;
     final rows = await db.query(LocalDatabaseService.budgetsTable);
-    return rows.map(Budget.fromMap).toList(growable: false);
+    final budgets = rows.map(Budget.fromMap).toList(growable: false);
+    return BudgetSpending.applyCurrentMonthSpend(
+      budgets,
+      transactions,
+      now: now,
+    );
   }
 
   Future<List<Goal>> _getGoals() async {
@@ -162,7 +175,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     return '${differenceRatio.round()}% $direction than $baselineLabel';
   }
 
-  List<double> _buildMonthlyTrend(
+  ({List<double> values, List<String> labels}) _buildMonthlyTrend(
     List<core.Transaction> transactions,
     DateTime now,
   ) {
@@ -179,16 +192,23 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
           .fold<double>(0, (sum, transaction) => sum + transaction.amount);
       return total;
     });
+    final labels = List<String>.generate(7, (index) {
+      final month = DateTime(now.year, now.month - (6 - index));
+      return FinanceLookups.shortMonthLabel(month).toUpperCase();
+    });
 
     final maxValue = values.fold<double>(0, math.max);
     if (maxValue <= 0) {
-      return List<double>.filled(7, 0);
+      return (values: List<double>.filled(7, 0), labels: labels);
     }
 
-    return values.map((value) => value / maxValue).toList(growable: false);
+    return (
+      values: values.map((value) => value / maxValue).toList(growable: false),
+      labels: labels,
+    );
   }
 
-  List<double> _buildWeeklyTrend(
+  ({List<double> values, List<String> labels}) _buildWeeklyTrend(
     List<core.Transaction> transactions,
     DateTime now,
   ) {
@@ -206,13 +226,20 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
           .fold<double>(0, (sum, transaction) => sum + transaction.amount);
       return total;
     });
+    final labels = List<String>.generate(7, (index) {
+      final dayStart = today.subtract(Duration(days: 6 - index));
+      return FinanceLookups.shortWeekdayLabel(dayStart, uppercase: true);
+    });
 
     final maxValue = values.fold<double>(0, math.max);
     if (maxValue <= 0) {
-      return List<double>.filled(7, 0);
+      return (values: List<double>.filled(7, 0), labels: labels);
     }
 
-    return values.map((value) => value / maxValue).toList(growable: false);
+    return (
+      values: values.map((value) => value / maxValue).toList(growable: false),
+      labels: labels,
+    );
   }
 
   List<AnalyticsCategory> _buildCategoryBreakdown(

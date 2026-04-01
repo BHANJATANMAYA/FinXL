@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:finxl/core/utils/finance_lookups.dart';
 
 class GoalsOverview extends Equatable {
   const GoalsOverview({
@@ -41,7 +42,7 @@ class SavingsGoal extends Equatable {
   final String accent;
   final String? badgeLabel;
 
-  double get progress => savedAmount / targetAmount;
+  double get progress => FinanceLookups.safeRatio(savedAmount, targetAmount);
 
   @override
   List<Object?> get props => [

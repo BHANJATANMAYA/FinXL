@@ -36,7 +36,6 @@ class BudgetPage extends StatelessWidget {
         final overspentList = overview.categories
             .where((item) => item.exceeded)
             .toList(growable: false);
-        final overspent = overspentList.isNotEmpty ? overspentList.first : null;
         final regular = overview.categories
             .where((item) => !item.exceeded)
             .toList(growable: false);
@@ -167,9 +166,14 @@ class BudgetPage extends StatelessWidget {
                       )
                       .toList(growable: false),
                 ),
-                if (overspent != null) ...[
+                if (overspentList.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  _ExceededCard(category: overspent),
+                  ...overspentList.map(
+                    (category) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _ExceededCard(category: category),
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 24),
                 InkWell(

@@ -401,15 +401,7 @@ class _SpendingTrendCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        const [
-                          'MON',
-                          'TUE',
-                          'WED',
-                          'THU',
-                          'FRI',
-                          'SAT',
-                          'SUN',
-                        ][index],
+                        insight.trendLabels[index],
                         style: GoogleFonts.inter(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,

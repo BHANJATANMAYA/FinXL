@@ -1,6 +1,7 @@
 import 'package:finxl/core/database/local_database_service.dart';
 import 'package:finxl/core/models/budget.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
+import 'package:finxl/core/utils/budget_spending.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
 import 'package:finxl/features/budget/domain/repositories/budget_repository.dart';
@@ -92,29 +93,12 @@ class BudgetRepositoryImpl implements BudgetRepository {
     final transactionRows = await _databaseService.queryAll(
       LocalDatabaseService.transactionsTable,
     );
-
-    final expenseTotals = <int, double>{};
-    for (final row in transactionRows) {
-      final transaction = core.Transaction.fromMap(row);
-      if (transaction.type != core.TransactionType.expense) {
-        continue;
-      }
-      expenseTotals.update(
-        transaction.categoryId,
-        (value) => value + transaction.amount,
-        ifAbsent: () => transaction.amount,
-      );
-    }
-
-    return budgetRows
-        .map((row) {
-          final budget = Budget.fromMap(row);
-          final categoryId = FinanceLookups.transactionCategoryDbIdFromLabel(
-            budget.categoryName,
-          );
-          return budget.copyWith(spentAmount: expenseTotals[categoryId] ?? 0);
-        })
+    final budgets = budgetRows.map(Budget.fromMap).toList(growable: false);
+    final transactions = transactionRows
+        .map(core.Transaction.fromMap)
         .toList(growable: false);
+
+    return BudgetSpending.applyCurrentMonthSpend(budgets, transactions);
   }
 
   @override

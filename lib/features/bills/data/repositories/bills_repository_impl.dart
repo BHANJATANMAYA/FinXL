@@ -14,8 +14,14 @@ class BillsRepositoryImpl implements BillsRepository {
   Future<BillsOverview> fetchOverview() async {
     final bills = await getBills();
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final scheduledBills = bills
-        .where((bill) => bill.isActive && !bill.isPaid)
+        .where(
+          (bill) =>
+              bill.isActive &&
+              !bill.isPaid &&
+              !_dateOnly(bill.dueDate).isBefore(today),
+        )
         .toList(growable: false);
 
     return BillsOverview(
@@ -91,5 +97,9 @@ class BillsRepositoryImpl implements BillsRepository {
   @override
   Future<void> deleteBill(int id) async {
     await _databaseService.delete(LocalDatabaseService.billsTable, id);
+  }
+
+  DateTime _dateOnly(DateTime value) {
+    return DateTime(value.year, value.month, value.day);
   }
 }

@@ -9,6 +9,7 @@ class DashboardSnapshot extends Equatable {
     required this.remainingBudgetRatio,
     required this.daysLeft,
     required this.weeklyTrend,
+    required this.weeklyTrendLabels,
     required this.highlights,
   });
 
@@ -19,6 +20,7 @@ class DashboardSnapshot extends Equatable {
   final double remainingBudgetRatio;
   final int daysLeft;
   final List<double> weeklyTrend;
+  final List<String> weeklyTrendLabels;
   final List<DashboardHighlight> highlights;
 
   @override
@@ -30,6 +32,7 @@ class DashboardSnapshot extends Equatable {
     remainingBudgetRatio,
     daysLeft,
     weeklyTrend,
+    weeklyTrendLabels,
     highlights,
   ];
 }

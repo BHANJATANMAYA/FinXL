@@ -4,6 +4,7 @@ import 'package:finxl/core/database/local_database_service.dart';
 import 'package:finxl/core/models/budget.dart';
 import 'package:finxl/core/models/goal.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
+import 'package:finxl/core/utils/budget_spending.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/features/dashboard/domain/entities/dashboard_snapshot.dart';
 import 'package:finxl/features/dashboard/domain/repositories/dashboard_repository.dart';
@@ -17,9 +18,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
   @override
   Future<DashboardSnapshot> fetchSnapshot() async {
     final transactions = await _getTransactions();
-    final budgets = await _getBudgets();
-    final goals = await _getGoals();
     final now = DateTime.now();
+    final budgets = await _getBudgets(transactions, now);
+    final goals = await _getGoals();
+    final weeklyTrend = _buildWeeklyTrend(transactions, now);
 
     final monthStart = DateTime(now.year, now.month);
     final nextMonthStart = DateTime(now.year, now.month + 1);
@@ -77,7 +79,8 @@ class DashboardRepositoryImpl implements DashboardRepository {
       monthlySpent: monthlySpent,
       remainingBudgetRatio: remainingBudgetRatio,
       daysLeft: math.max(lastDayOfMonth.day - now.day, 0),
-      weeklyTrend: _buildWeeklyTrend(transactions, now),
+      weeklyTrend: weeklyTrend.values,
+      weeklyTrendLabels: weeklyTrend.labels,
       highlights: [
         DashboardHighlight(
           title: 'Goal Progress',
@@ -101,10 +104,18 @@ class DashboardRepositoryImpl implements DashboardRepository {
     return rows.map(core.Transaction.fromMap).toList(growable: false);
   }
 
-  Future<List<Budget>> _getBudgets() async {
+  Future<List<Budget>> _getBudgets(
+    List<core.Transaction> transactions,
+    DateTime now,
+  ) async {
     final db = await _databaseService.database;
     final rows = await db.query(LocalDatabaseService.budgetsTable);
-    return rows.map(Budget.fromMap).toList(growable: false);
+    final budgets = rows.map(Budget.fromMap).toList(growable: false);
+    return BudgetSpending.applyCurrentMonthSpend(
+      budgets,
+      transactions,
+      now: now,
+    );
   }
 
   Future<List<Goal>> _getGoals() async {
@@ -126,7 +137,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
     return !value.isBefore(start) && value.isBefore(end);
   }
 
-  List<double> _buildWeeklyTrend(
+  ({List<double> values, List<String> labels}) _buildWeeklyTrend(
     List<core.Transaction> transactions,
     DateTime now,
   ) {
@@ -142,12 +153,19 @@ class DashboardRepositoryImpl implements DashboardRepository {
           )
           .fold<double>(0, (sum, transaction) => sum + transaction.amount);
     });
+    final labels = List<String>.generate(7, (index) {
+      final day = today.subtract(Duration(days: 6 - index));
+      return FinanceLookups.shortWeekdayLabel(day);
+    });
 
     final maxValue = values.fold<double>(0, math.max);
     if (maxValue <= 0) {
-      return List<double>.filled(7, 0);
+      return (values: List<double>.filled(7, 0), labels: labels);
     }
 
-    return values.map((value) => value / maxValue).toList(growable: false);
+    return (
+      values: values.map((value) => value / maxValue).toList(growable: false),
+      labels: labels,
+    );
   }
 }

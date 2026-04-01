@@ -41,6 +41,12 @@ class BillsPage extends StatelessWidget {
         final later = reminders
             .where((item) => item.sectionLabel == 'Later This Month')
             .toList(growable: false);
+        final overdue = reminders
+            .where((item) => item.sectionLabel == 'Overdue')
+            .toList(growable: false);
+        final upcoming = reminders
+            .where((item) => item.sectionLabel == 'Upcoming')
+            .toList(growable: false);
 
         return RefreshIndicator(
           onRefresh: () => context.read<BillsCubit>().refresh(),
@@ -126,26 +132,10 @@ class BillsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                if (dueThisWeek.isNotEmpty) ...[
-                  const _SectionTitle(title: 'DUE THIS WEEK'),
-                  const SizedBox(height: 16),
-                  ...dueThisWeek.map(
-                    (reminder) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _ReminderTile(reminder: reminder),
-                    ),
-                  ),
-                ],
-                if (later.isNotEmpty) ...[
-                  const _SectionTitle(title: 'LATER THIS MONTH'),
-                  const SizedBox(height: 16),
-                  ...later.map(
-                    (reminder) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _ReminderTile(reminder: reminder),
-                    ),
-                  ),
-                ],
+                ..._buildSection('OVERDUE', overdue),
+                ..._buildSection('DUE THIS WEEK', dueThisWeek),
+                ..._buildSection('LATER THIS MONTH', later),
+                ..._buildSection('UPCOMING', upcoming),
                 if (reminders.isEmpty)
                   SectionCard(
                     child: Text(
@@ -214,6 +204,23 @@ class BillsPage extends StatelessWidget {
       BillFilter.bills => 'Bills',
       BillFilter.emis => 'EMIs',
     };
+  }
+
+  List<Widget> _buildSection(String title, List<BillReminder> reminders) {
+    if (reminders.isEmpty) {
+      return const [];
+    }
+
+    return [
+      _SectionTitle(title: title),
+      const SizedBox(height: 16),
+      ...reminders.map(
+        (reminder) => Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: _ReminderTile(reminder: reminder),
+        ),
+      ),
+    ];
   }
 }
 

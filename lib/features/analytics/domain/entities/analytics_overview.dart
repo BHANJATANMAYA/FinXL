@@ -35,6 +35,7 @@ class AnalyticsPeriodInsight extends Equatable {
     required this.comparisonLabel,
     required this.trendLabel,
     required this.trendValues,
+    required this.trendLabels,
   });
 
   final AnalyticsPeriod period;
@@ -42,6 +43,7 @@ class AnalyticsPeriodInsight extends Equatable {
   final String comparisonLabel;
   final String trendLabel;
   final List<double> trendValues;
+  final List<String> trendLabels;
 
   @override
   List<Object> get props => [
@@ -50,6 +52,7 @@ class AnalyticsPeriodInsight extends Equatable {
     comparisonLabel,
     trendLabel,
     trendValues,
+    trendLabels,
   ];
 }
 
