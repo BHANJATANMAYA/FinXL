@@ -88,7 +88,7 @@ class BillsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Every active reminder sends a notification 48 hours before its due date.',
+                  'Active reminders notify you 7 days before, 1 day before, and on the due date.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     height: 1.5,
@@ -272,56 +272,73 @@ class _ReminderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = AppTheme.accentColor(reminder.accent);
-    return Opacity(
-      opacity: reminder.isFaded ? 0.72 : 1,
-      child: SectionCard(
-        padding: const EdgeInsets.all(20),
-        border: Border.all(
-          color: AppTheme.surfaceContainerHighest.withValues(alpha: 0.24),
+    return Dismissible(
+      key: Key('reminder_${reminder.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.only(right: 24),
+        alignment: Alignment.centerRight,
+        decoration: BoxDecoration(
+          color: AppTheme.danger,
+          borderRadius: BorderRadius.circular(32),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
+      ),
+      onDismissed: (_) {
+        context.read<BillsCubit>().deleteReminder(reminder.id);
+      },
+      child: Opacity(
+        opacity: reminder.isFaded ? 0.72 : 1,
+        child: SectionCard(
+          padding: const EdgeInsets.all(20),
+          border: Border.all(
+            color: AppTheme.surfaceContainerHighest.withValues(alpha: 0.24),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(resolveIcon(reminder.iconKey), color: accent),
               ),
-              child: Icon(resolveIcon(reminder.iconKey), color: accent),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    reminder.title,
-                    style: GoogleFonts.manrope(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reminder.title,
+                      style: GoogleFonts.manrope(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${reminder.dueLabel}  •  ${formatCurrency(reminder.amount, decimals: 2)}',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppTheme.onSurfaceVariant,
+                    const SizedBox(height: 4),
+                    Text(
+                      '${reminder.dueLabel}  •  ${formatCurrency(reminder.amount, decimals: 2)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Switch.adaptive(
-              value: reminder.isActive,
-              onChanged: (_) =>
-                  context.read<BillsCubit>().toggleReminder(reminder.id),
-              activeThumbColor: Colors.white,
-              activeTrackColor: AppTheme.primary,
-              inactiveTrackColor: AppTheme.surfaceContainerHigh,
-            ),
-          ],
+              Switch.adaptive(
+                value: reminder.isActive,
+                onChanged: (_) =>
+                    context.read<BillsCubit>().toggleReminder(reminder.id),
+                activeThumbColor: Colors.white,
+                activeTrackColor: AppTheme.primary,
+                inactiveTrackColor: AppTheme.surfaceContainerHigh,
+              ),
+            ],
+          ),
         ),
       ),
     );

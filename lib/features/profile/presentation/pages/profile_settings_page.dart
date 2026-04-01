@@ -53,7 +53,7 @@ class ProfileSettingsPage extends StatelessWidget {
                 Expanded(
                   child: BlocBuilder<GoalsCubit, GoalsState>(
                     builder: (context, state) => _QuickStatCard(
-                      title: 'Goals tracked',
+                      title: 'Goals \ntracked',
                       value: '${state.overview?.goals.length ?? 0}',
                       icon: Icons.track_changes,
                     ),
@@ -134,6 +134,9 @@ class ProfileSettingsPage extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 16),
+
+            //todo : add logout button
           ],
         ),
       ),

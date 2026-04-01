@@ -61,24 +61,31 @@ class LocalNotificationService {
     await macPlugin?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
+  DateTimeComponents? _getDateTimeComponents(String recurrence) {
+    return switch (recurrence.toLowerCase()) {
+      'weekly' => DateTimeComponents.dayOfWeekAndTime,
+      'monthly' => DateTimeComponents.dayOfMonthAndTime,
+      'yearly' => DateTimeComponents.dateAndTime,
+      _ => null,
+    };
+  }
+
   Future<void> syncBillReminder(Bill bill) async {
     await initialize();
 
     final billId = bill.id;
     if (billId == null) return;
 
+    final baseId = billId * 10;
+    
+    // Always clear old ones first
+    await cancelBillReminder(billId);
+
     if (!bill.isActive || bill.isPaid) {
-      await cancelBillReminder(billId);
       return;
     }
 
-    final now = DateTime.now();
-    final scheduledAt = bill.dueDate.subtract(const Duration(hours: 48));
-    final effectiveDate = scheduledAt.isAfter(now)
-        ? scheduledAt
-        : now.add(const Duration(minutes: 1));
-
-    final notificationDetails = NotificationDetails(
+    final notificationDetails = const NotificationDetails(
       android: AndroidNotificationDetails(
         'finxl_reminders',
         'FinXL Reminders',
@@ -86,23 +93,71 @@ class LocalNotificationService {
         importance: Importance.max,
         priority: Priority.high,
       ),
-      iOS: const DarwinNotificationDetails(),
-      macOS: const DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(),
+      macOS: DarwinNotificationDetails(),
     );
 
-    await _plugin.zonedSchedule(
-      id: billId,
-      title: bill.title,
-      body:
-          '₹${bill.amount.toStringAsFixed(2)} due on ${bill.dueDate.day}/${bill.dueDate.month}.',
-      scheduledDate: tz.TZDateTime.from(effectiveDate, tz.local),
-      notificationDetails: notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: billId.toString(),
-    );
+    final matchComponents = _getDateTimeComponents(bill.recurrence);
+
+    final schedules = [
+      (
+        offsetId: 0,
+        date: bill.dueDate.subtract(const Duration(days: 7)),
+        message: 'Upcoming: ₹${bill.amount.toStringAsFixed(2)} due next week on ${bill.dueDate.day}/${bill.dueDate.month}.'
+      ),
+      (
+        offsetId: 1,
+        date: bill.dueDate.subtract(const Duration(days: 1)),
+        message: 'Reminder: ₹${bill.amount.toStringAsFixed(2)} due tomorrow.'
+      ),
+      (
+        offsetId: 2,
+        date: bill.dueDate,
+        message: 'Due Today: ₹${bill.amount.toStringAsFixed(2)}.'
+      ),
+    ];
+
+    final nowTime = tz.TZDateTime.now(tz.local);
+
+    for (final schedule in schedules) {
+      tz.TZDateTime scheduledTZDate = tz.TZDateTime.from(schedule.date, tz.local);
+      
+      if (scheduledTZDate.isBefore(nowTime)) {
+        if (matchComponents == null) continue;
+        
+        // Shift date to future based on recurrence
+        if (matchComponents == DateTimeComponents.dayOfWeekAndTime) {
+            while(scheduledTZDate.isBefore(nowTime)) {
+                scheduledTZDate = scheduledTZDate.add(const Duration(days: 7));
+            }
+        } else if (matchComponents == DateTimeComponents.dayOfMonthAndTime) {
+            while(scheduledTZDate.isBefore(nowTime)) {
+                scheduledTZDate = tz.TZDateTime(tz.local, scheduledTZDate.year, scheduledTZDate.month + 1, scheduledTZDate.day, scheduledTZDate.hour, scheduledTZDate.minute);
+            }
+        } else if (matchComponents == DateTimeComponents.dateAndTime) {
+            while(scheduledTZDate.isBefore(nowTime)) {
+                scheduledTZDate = tz.TZDateTime(tz.local, scheduledTZDate.year + 1, scheduledTZDate.month, scheduledTZDate.day, scheduledTZDate.hour, scheduledTZDate.minute);
+            }
+        }
+      }
+
+      await _plugin.zonedSchedule(
+        id: baseId + schedule.offsetId,
+        title: bill.title,
+        body: schedule.message,
+        scheduledDate: scheduledTZDate,
+        notificationDetails: notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: matchComponents,
+        payload: billId.toString(),
+      );
+    }
   }
 
   Future<void> cancelBillReminder(int id) async {
-    await _plugin.cancel(id: id);
+    final baseId = id * 10;
+    for (int i = 0; i < 3; i++) {
+        await _plugin.cancel(id: baseId + i);
+    }
   }
 }

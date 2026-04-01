@@ -18,7 +18,16 @@ class _AddBillPageState extends State<AddBillPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
-  final _recurrenceController = TextEditingController(text: 'Monthly');
+  final _customRecurrenceController = TextEditingController();
+
+  String _selectedRecurrence = 'Monthly';
+  final List<String> _recurrenceOptions = const [
+    'Weekly',
+    'Monthly',
+    'Yearly',
+    'Custom',
+  ];
+
   DateTime _dueDate = DateTime.now().add(const Duration(days: 7));
   BillCategory _category = BillCategory.bill;
 
@@ -26,7 +35,7 @@ class _AddBillPageState extends State<AddBillPage> {
   void dispose() {
     _titleController.dispose();
     _amountController.dispose();
-    _recurrenceController.dispose();
+    _customRecurrenceController.dispose();
     super.dispose();
   }
 
@@ -87,6 +96,7 @@ class _AddBillPageState extends State<AddBillPage> {
                       const SizedBox(height: 16),
                       DropdownButtonFormField<BillCategory>(
                         initialValue: _category,
+                        borderRadius: BorderRadius.circular(24),
                         decoration: const InputDecoration(
                           labelText: 'Reminder type',
                         ),
@@ -103,12 +113,40 @@ class _AddBillPageState extends State<AddBillPage> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _recurrenceController,
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedRecurrence,
+                        borderRadius: BorderRadius.circular(24),
                         decoration: const InputDecoration(
                           labelText: 'Recurrence',
                         ),
+                        items: _recurrenceOptions
+                            .map(
+                              (item) => DropdownMenuItem(
+                                value: item,
+                                child: Text(item),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedRecurrence = value);
+                          }
+                        },
                       ),
+                      if (_selectedRecurrence == 'Custom') ...[
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _customRecurrenceController,
+                          decoration: const InputDecoration(
+                            labelText: 'Custom Recurrence',
+                            hintText: 'e.g. Every 2 weeks',
+                          ),
+                          validator: (value) =>
+                              (value == null || value.trim().isEmpty)
+                              ? 'Required'
+                              : null,
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -178,14 +216,16 @@ class _AddBillPageState extends State<AddBillPage> {
       return;
     }
 
+    final recurrenceValue = _selectedRecurrence == 'Custom'
+        ? _customRecurrenceController.text.trim()
+        : _selectedRecurrence;
+
     final success = await context.read<BillsCubit>().createBill(
       title: _titleController.text.trim(),
       amount: amount,
       dueDate: _dueDate,
       category: _category,
-      recurrence: _recurrenceController.text.trim().isEmpty
-          ? 'Monthly'
-          : _recurrenceController.text.trim(),
+      recurrence: recurrenceValue.isEmpty ? 'Monthly' : recurrenceValue,
     );
     if (success && mounted) context.pop();
   }

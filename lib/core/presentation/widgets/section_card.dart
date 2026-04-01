@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class SectionCard extends StatelessWidget {
   const SectionCard({
     required this.child,
-    this.padding = const EdgeInsets.all(24),
+    this.padding = const EdgeInsets.all(16),
     this.color,
     this.border,
     this.boxShadow,

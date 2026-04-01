@@ -96,6 +96,15 @@ class BillsCubit extends Cubit<BillsState> {
     await load(showLoading: false);
   }
 
+  Future<void> deleteReminder(String reminderId) async {
+    final id = int.tryParse(reminderId);
+    if (id == null) return;
+
+    await _repository.deleteBill(id);
+    await _notificationService.cancelBillReminder(id);
+    await load(showLoading: false);
+  }
+
   String _typeValue(BillCategory category) {
     return switch (category) {
       BillCategory.subscription => 'subscription',
