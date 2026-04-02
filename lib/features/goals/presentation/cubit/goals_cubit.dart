@@ -65,6 +65,45 @@ class GoalsCubit extends Cubit<GoalsState> {
       return false;
     }
   }
+
+  Future<bool> updateGoal({
+    required int id,
+    required String title,
+    required double targetAmount,
+    required double savedAmount,
+    required DateTime deadline,
+  }) async {
+    emit(state.copyWith(isSaving: true, errorMessage: null));
+    try {
+      await _repository.updateGoal(
+        Goal(
+          id: id,
+          title: title,
+          targetAmount: targetAmount,
+          currentAmount: savedAmount,
+          deadline: deadline,
+          color: 'secondary',
+          icon: 'goals',
+        ),
+      );
+      await load(showLoading: false);
+      return true;
+    } catch (_) {
+      emit(
+        state.copyWith(isSaving: false, errorMessage: 'Unable to update goal.'),
+      );
+      return false;
+    }
+  }
+
+  Future<void> deleteGoal(int id) async {
+    try {
+      await _repository.deleteGoal(id);
+      await load(showLoading: false);
+    } catch (_) {
+      emit(state.copyWith(errorMessage: 'Unable to delete goal.'));
+    }
+  }
 }
 
 class GoalsState extends Equatable {

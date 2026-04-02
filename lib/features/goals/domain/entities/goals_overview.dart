@@ -25,6 +25,8 @@ class GoalsOverview extends Equatable {
 
 class SavingsGoal extends Equatable {
   const SavingsGoal({
+    this.id,
+    required this.deadline,
     required this.title,
     required this.subtitle,
     required this.savedAmount,
@@ -33,6 +35,9 @@ class SavingsGoal extends Equatable {
     required this.accent,
     this.badgeLabel,
   });
+
+  final int? id;
+  final DateTime deadline;
 
   final String title;
   final String subtitle;
@@ -46,6 +51,8 @@ class SavingsGoal extends Equatable {
 
   @override
   List<Object?> get props => [
+    id,
+    deadline,
     title,
     subtitle,
     savedAmount,

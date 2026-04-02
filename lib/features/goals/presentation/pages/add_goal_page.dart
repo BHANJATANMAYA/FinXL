@@ -1,5 +1,6 @@
 import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/theme/app_theme.dart';
+import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/cubit/goals_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,7 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddGoalPage extends StatefulWidget {
-  const AddGoalPage({super.key});
+  const AddGoalPage({super.key, this.goalToEdit});
+
+  final SavingsGoal? goalToEdit;
 
   @override
   State<AddGoalPage> createState() => _AddGoalPageState();
@@ -15,10 +18,29 @@ class AddGoalPage extends StatefulWidget {
 
 class _AddGoalPageState extends State<AddGoalPage> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _targetController = TextEditingController();
-  final _savedController = TextEditingController(text: '0');
-  DateTime _deadline = DateTime.now().add(const Duration(days: 90));
+  late final TextEditingController _titleController;
+  late final TextEditingController _targetController;
+  late final TextEditingController _savedController;
+  late DateTime _deadline;
+
+  bool get _isEdit => widget.goalToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(
+      text: _isEdit ? widget.goalToEdit!.title : '',
+    );
+    _targetController = TextEditingController(
+      text: _isEdit ? widget.goalToEdit!.targetAmount.toStringAsFixed(0) : '',
+    );
+    _savedController = TextEditingController(
+      text: _isEdit ? widget.goalToEdit!.savedAmount.toStringAsFixed(0) : '0',
+    );
+    _deadline = _isEdit
+        ? widget.goalToEdit!.deadline
+        : DateTime.now().add(const Duration(days: 90));
+  }
 
   @override
   void dispose() {
@@ -38,7 +60,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
           icon: const Icon(Icons.close),
         ),
         title: Text(
-          'Create Goal',
+          _isEdit ? 'Edit Goal' : 'Create Goal',
           style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
         ),
       ),
@@ -113,7 +135,7 @@ class _AddGoalPageState extends State<AddGoalPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Save Goal'),
+                          : Text(_isEdit ? 'Update Goal' : 'Save Goal'),
                     );
                   },
                 ),
@@ -152,24 +174,68 @@ class _AddGoalPageState extends State<AddGoalPage> {
     }
   }
 
+  // Future<void> _submit() async {
+  //   if (!_formKey.currentState!.validate()) return;
+
+  //   final target = double.tryParse(_targetController.text.trim());
+  //   final saved = double.tryParse(_savedController.text.trim()) ?? 0;
+  //   if (target == null || target <= 0) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Enter a valid target amount.')),
+  //     );
+  //     return;
+  //   }
+
+  //   final success = _isEdit
+  //       ? await context.read<GoalsCubit>().updateGoal(
+  //           id: widget.goalToEdit!.id!,
+  //           title: _titleController.text.trim(),
+  //           targetAmount: target,
+  //           savedAmount: saved,
+  //           deadline: _deadline,
+  //         )
+  //       : await context.read<GoalsCubit>().createGoal(
+  //           title: _titleController.text.trim(),
+  //           targetAmount: target,
+  //           savedAmount: saved,
+  //           deadline: _deadline,
+  //         );
+
+  //   if (success && mounted) context.pop();
+  // }
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final target = double.tryParse(_targetController.text.trim());
     final saved = double.tryParse(_savedController.text.trim()) ?? 0;
+
     if (target == null || target <= 0) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Enter a valid target amount.')),
       );
       return;
     }
+    final goalsCubit = context.read<GoalsCubit>();
 
-    final success = await context.read<GoalsCubit>().createGoal(
-      title: _titleController.text.trim(),
-      targetAmount: target,
-      savedAmount: saved,
-      deadline: _deadline,
-    );
-    if (success && mounted) context.pop();
+    final success = _isEdit
+        ? await goalsCubit.updateGoal(
+            id: widget.goalToEdit!.id!,
+            title: _titleController.text.trim(),
+            targetAmount: target,
+            savedAmount: saved,
+            deadline: _deadline,
+          )
+        : await goalsCubit.createGoal(
+            title: _titleController.text.trim(),
+            targetAmount: target,
+            savedAmount: saved,
+            deadline: _deadline,
+          );
+
+    // ✅ Check mounted AFTER async
+    if (!mounted) return;
+
+    if (success) context.pop();
   }
 }

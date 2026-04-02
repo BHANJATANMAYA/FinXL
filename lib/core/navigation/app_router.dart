@@ -7,6 +7,7 @@ import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
 import 'package:finxl/features/budget/presentation/pages/add_budget_page.dart';
 import 'package:finxl/features/budget/presentation/pages/budget_page.dart';
 import 'package:finxl/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/pages/add_goal_page.dart';
 import 'package:finxl/features/goals/presentation/pages/goals_page.dart';
 import 'package:finxl/features/profile/presentation/pages/profile_settings_page.dart';
@@ -109,7 +110,7 @@ class AppRouter {
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: addGoalPath,
-        pageBuilder: (context, state) => _buildPage(state, const AddGoalPage()),
+        pageBuilder: (context, state) => _buildPage(state, AddGoalPage(goalToEdit: state.extra as SavingsGoal?)),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

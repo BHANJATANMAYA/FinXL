@@ -36,9 +36,13 @@ class GoalsRepositoryImpl implements GoalsRepository {
         .where((goal) => goal.currentAmount >= goal.targetAmount)
         .firstOrNull;
 
+    final progressPercentage = (overallProgress * 100).round();
+    final progressMessage = progressPercentage > 100
+        ? 'You are ${progressPercentage - 100}% ahead of your goal.'
+        : 'You are $progressPercentage% closer to your total milestones.';
+
     return GoalsOverview(
-      progressMessage:
-          'You are ${(overallProgress * 100).round()}% closer to your total milestones.',
+      progressMessage: progressMessage,
       goals: goals
           .asMap()
           .entries
@@ -50,13 +54,17 @@ class GoalsRepositoryImpl implements GoalsRepository {
               goal.targetAmount,
             );
             return SavingsGoal(
+              id: goal.id,
+              deadline: goal.deadline,
               title: goal.title,
               subtitle:
                   'Target by ${FinanceLookups.formatShortDate(goal.deadline)}',
               savedAmount: goal.currentAmount,
               targetAmount: goal.targetAmount,
               iconKey: goal.icon ?? 'goals',
-              accent: goal.color ?? FinanceLookups.accentForIndex(index),
+              accent: progress >= 1
+                  ? 'primary'
+                  : (goal.color ?? FinanceLookups.accentForIndex(index)),
               badgeLabel: progress >= 1
                   ? 'Completed'
                   : progress >= 0.75

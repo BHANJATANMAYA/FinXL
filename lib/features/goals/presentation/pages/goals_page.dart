@@ -158,8 +158,16 @@ class _GoalCard extends StatelessWidget {
                 ),
                 child: Icon(resolveIcon(goal.iconKey), color: accent),
               ),
-              if (goal.badgeLabel != null)
-                StatusBadge(label: goal.badgeLabel!, accent: accent),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (goal.badgeLabel != null) ...[
+                    StatusBadge(label: goal.badgeLabel!, accent: accent),
+                    const SizedBox(width: 4),
+                  ],
+                  _GoalMenuBuilder(goal: goal),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 28),
@@ -335,6 +343,117 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _GoalMenuBuilder extends StatelessWidget {
+  const _GoalMenuBuilder({required this.goal});
+
+  final SavingsGoal goal;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, color: AppTheme.onSurfaceVariant),
+      color: AppTheme.surfaceContainerLowest,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      onSelected: (value) {
+        if (value == 'edit') {
+          context.push(AppRouter.addGoalPath, extra: goal);
+        } else if (value == 'delete') {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: AppTheme.surfaceContainerLowest,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: Text(
+                'Delete Goal',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+              content: Text(
+                'Are you sure you want to delete the ${goal.title} goal?',
+                style: GoogleFonts.inter(
+                  color: AppTheme.onSurfaceVariant,
+                  fontSize: 16,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => ctx.pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.onSurfaceVariant,
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    context.read<GoalsCubit>().deleteGoal(goal.id!);
+                    ctx.pop();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.danger,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: Text(
+                    'Delete',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              const Icon(Icons.edit_outlined, size: 20, color: AppTheme.onSurface),
+              const SizedBox(width: 12),
+              Text(
+                'Edit Goal',
+                style: GoogleFonts.inter(
+                  color: AppTheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              const Icon(Icons.delete_outline, color: AppTheme.danger, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'Delete Goal',
+                style: GoogleFonts.inter(
+                  color: AppTheme.danger,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
