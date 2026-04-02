@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:finxl/core/database/local_database_service.dart';
+import 'package:finxl/core/models/bill.dart';
 import 'package:finxl/core/models/budget.dart';
 import 'package:finxl/core/models/goal.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
@@ -21,6 +22,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
     final now = DateTime.now();
     final budgets = await _getBudgets(transactions, now);
     final goals = await _getGoals();
+    final bills = await _getBills();
     final weeklyTrend = _buildWeeklyTrend(transactions, now);
 
     final monthStart = DateTime(now.year, now.month);
@@ -72,6 +74,40 @@ class DashboardRepositoryImpl implements DashboardRepository {
     );
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
 
+    final sortedTransactions = List<core.Transaction>.from(transactions)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final recentTransactions =
+        sortedTransactions.take(5).toList(growable: false);
+
+    final sortedBills = List<Bill>.from(bills)
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    final recentUpcomingBills = sortedBills.take(3).toList(growable: false);
+
+    final budgetAlerts =
+        budgets
+            .where(
+              (b) => b.limitAmount > 0 && b.spentAmount >= b.limitAmount * 0.9,
+            )
+            .toList(growable: false);
+
+    Goal? activeGoal;
+    final activeGoals =
+        goals.where((g) => g.currentAmount < g.targetAmount).toList();
+    if (activeGoals.isNotEmpty) {
+      activeGoals.sort((a, b) {
+        final aRatio = FinanceLookups.safeRatio(
+          a.currentAmount,
+          a.targetAmount,
+        );
+        final bRatio = FinanceLookups.safeRatio(
+          b.currentAmount,
+          b.targetAmount,
+        );
+        return bRatio.compareTo(aRatio);
+      });
+      activeGoal = activeGoals.first;
+    }
+
     return DashboardSnapshot(
       totalBalance: totalBalance,
       savedThisMonth: monthlyIncome - monthlySpent,
@@ -95,6 +131,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
           accent: 'tertiary',
         ),
       ],
+      recentTransactions: recentTransactions,
+      upcomingBills: recentUpcomingBills,
+      budgetAlerts: budgetAlerts,
+      activeGoal: activeGoal,
     );
   }
 
@@ -122,6 +162,16 @@ class DashboardRepositoryImpl implements DashboardRepository {
     final db = await _databaseService.database;
     final rows = await db.query(LocalDatabaseService.goalsTable);
     return rows.map(Goal.fromMap).toList(growable: false);
+  }
+
+  Future<List<Bill>> _getBills() async {
+    final db = await _databaseService.database;
+    final rows = await db.query(
+      LocalDatabaseService.billsTable,
+      where: 'is_active = ? AND is_paid = ?',
+      whereArgs: [1, 0],
+    );
+    return rows.map(Bill.fromMap).toList(growable: false);
   }
 
   double _sumTransactions(

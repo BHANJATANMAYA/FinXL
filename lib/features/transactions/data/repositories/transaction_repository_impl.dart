@@ -23,11 +23,13 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<List<core.Transaction>> getTransactions() async {
+  Future<List<core.Transaction>> getTransactions({int? limit, int? offset}) async {
     final db = await _databaseService.database;
     final rows = await db.query(
       LocalDatabaseService.transactionsTable,
       orderBy: 'date DESC',
+      limit: limit,
+      offset: offset,
     );
 
     return rows.map(core.Transaction.fromMap).toList(growable: false);

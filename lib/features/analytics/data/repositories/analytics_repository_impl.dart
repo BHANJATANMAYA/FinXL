@@ -81,6 +81,9 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       monthlyInsight: AnalyticsPeriodInsight(
         period: AnalyticsPeriod.monthly,
         headlineAmount: monthlyExpense,
+        totalIncome: monthlyIncome,
+        totalExpense: monthlyExpense,
+        previousTotalExpense: previousMonthExpense,
         comparisonLabel: _comparisonLabel(
           monthlyExpense,
           previousMonthExpense,
@@ -93,6 +96,12 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       weeklyInsight: AnalyticsPeriodInsight(
         period: AnalyticsPeriod.weekly,
         headlineAmount: weeklyExpense,
+        totalIncome: _sumTransactions(
+          weeklyTransactions,
+          core.TransactionType.income,
+        ),
+        totalExpense: weeklyExpense,
+        previousTotalExpense: previousWeekExpense,
         comparisonLabel: _comparisonLabel(
           weeklyExpense,
           previousWeekExpense,
@@ -104,7 +113,8 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
         trendValues: weeklyTrend.values,
         trendLabels: weeklyTrend.labels,
       ),
-      categories: _buildCategoryBreakdown(monthlyTransactions),
+      monthlyCategories: _buildCategoryBreakdown(monthlyTransactions),
+      weeklyCategories: _buildCategoryBreakdown(weeklyTransactions),
       insights: _buildInsights(monthlyTransactions, budgets, goals),
     );
   }
@@ -284,6 +294,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
           );
           return AnalyticsCategory(
             label: category.label,
+            amount: categoryEntry.value,
             percentage: (categoryEntry.value / totalExpense) * 100,
             accent: FinanceLookups.accentForIndex(index),
           );

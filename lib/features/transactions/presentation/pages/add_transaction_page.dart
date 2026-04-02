@@ -123,13 +123,19 @@ class AddTransactionPage extends StatelessWidget {
                   const SizedBox(height: 24),
                   _DateSelector(selectedDate: state.date),
                   const SizedBox(height: 40),
-                  _CategoryGrid(
-                    config: state.config!,
-                    selectedCategoryId: state.selectedCategoryId,
-                  ),
-                  const SizedBox(height: 40),
+                  if (state.type == TransactionType.expense) ...[
+                    _CategoryGrid(
+                      config: state.config!,
+                      selectedCategoryId: state.selectedCategoryId,
+                    ),
+                    const SizedBox(height: 40),
+                  ],
                   _PaymentMethods(
-                    methods: state.config!.paymentMethods,
+                    methods: state.type == TransactionType.income
+                        ? state.config!.paymentMethods
+                            .where((m) => m != PaymentMethod.card)
+                            .toList(growable: false)
+                        : state.config!.paymentMethods,
                     selected: state.paymentMethod,
                   ),
                   const SizedBox(height: 32),
@@ -206,21 +212,22 @@ class _AmountField extends StatelessWidget {
           width: 96,
           height: 4,
           decoration: BoxDecoration(
-            color: AppTheme.primary.withValues(alpha: 0.16),
+            // color: AppTheme.primary.withValues(alpha: 0.16),
+            color: AppTheme.primary,
             borderRadius: BorderRadius.circular(999),
           ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: FractionallySizedBox(
-              widthFactor: 0.45,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.primary,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-          ),
+          // child: Align(
+          //   alignment: Alignment.centerLeft,
+          //   child: FractionallySizedBox(
+          //     widthFactor: 0.45,
+          //     child: Container(
+          //       decoration: BoxDecoration(
+          //         color: AppTheme.primary,
+          //         borderRadius: BorderRadius.circular(999),
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ),
       ],
     );
@@ -267,6 +274,10 @@ class _CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final expenseCategories = config.categories
+        .where((c) => c.id != 'income')
+        .toList(growable: false);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -281,7 +292,7 @@ class _CategoryGrid extends StatelessWidget {
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: config.categories.length,
+              itemCount: expenseCategories.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
                 mainAxisSpacing: 16,
@@ -289,7 +300,7 @@ class _CategoryGrid extends StatelessWidget {
                 childAspectRatio: 0.84,
               ),
               itemBuilder: (context, index) {
-                final category = config.categories[index];
+                final category = expenseCategories[index];
                 final isSelected = category.id == selectedCategoryId;
                 return InkWell(
                   onTap: () => context.read<TransactionCubit>().selectCategory(

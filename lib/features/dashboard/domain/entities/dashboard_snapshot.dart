@@ -1,4 +1,8 @@
 import 'package:equatable/equatable.dart';
+import 'package:finxl/core/models/bill.dart';
+import 'package:finxl/core/models/budget.dart';
+import 'package:finxl/core/models/goal.dart';
+import 'package:finxl/core/models/transaction.dart';
 
 class DashboardSnapshot extends Equatable {
   const DashboardSnapshot({
@@ -11,6 +15,10 @@ class DashboardSnapshot extends Equatable {
     required this.weeklyTrend,
     required this.weeklyTrendLabels,
     required this.highlights,
+    required this.recentTransactions,
+    required this.upcomingBills,
+    required this.budgetAlerts,
+    this.activeGoal,
   });
 
   final double totalBalance;
@@ -22,9 +30,13 @@ class DashboardSnapshot extends Equatable {
   final List<double> weeklyTrend;
   final List<String> weeklyTrendLabels;
   final List<DashboardHighlight> highlights;
+  final List<Transaction> recentTransactions;
+  final List<Bill> upcomingBills;
+  final List<Budget> budgetAlerts;
+  final Goal? activeGoal;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
     totalBalance,
     savedThisMonth,
     monthlyIncome,
@@ -34,6 +46,10 @@ class DashboardSnapshot extends Equatable {
     weeklyTrend,
     weeklyTrendLabels,
     highlights,
+    recentTransactions,
+    upcomingBills,
+    budgetAlerts,
+    activeGoal,
   ];
 }
 

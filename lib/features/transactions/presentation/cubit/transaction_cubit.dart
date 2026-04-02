@@ -32,7 +32,14 @@ class TransactionCubit extends Cubit<TransactionState> {
     }
   }
 
-  void selectType(TransactionType type) => emit(state.copyWith(type: type));
+  void selectType(TransactionType type) {
+    if (type == TransactionType.income &&
+        state.paymentMethod == PaymentMethod.card) {
+      emit(state.copyWith(type: type, paymentMethod: PaymentMethod.upi));
+    } else {
+      emit(state.copyWith(type: type));
+    }
+  }
 
   void selectCategory(String categoryId) {
     emit(state.copyWith(selectedCategoryId: categoryId));
@@ -50,7 +57,10 @@ class TransactionCubit extends Cubit<TransactionState> {
 
   Future<void> submit() async {
     final amount = double.tryParse(state.amount.trim());
-    if (amount == null || amount <= 0 || state.selectedCategoryId == null) {
+    if (amount == null ||
+        amount <= 0 ||
+        (state.type == TransactionType.expense &&
+            state.selectedCategoryId == null)) {
       emit(
         state.copyWith(
           errorMessage: 'Enter a valid amount and choose a category.',
@@ -75,9 +85,11 @@ class TransactionCubit extends Cubit<TransactionState> {
               ? core.TransactionType.income
               : core.TransactionType.expense,
           paymentMethod: _paymentMethodValue(state.paymentMethod),
-          categoryId: FinanceLookups.transactionCategoryDbId(
-            state.selectedCategoryId!,
-          ),
+          categoryId: state.type == TransactionType.income
+              ? FinanceLookups.transactionCategoryDbId('income')
+              : FinanceLookups.transactionCategoryDbId(
+                  state.selectedCategoryId!,
+                ),
         ),
       );
       emit(

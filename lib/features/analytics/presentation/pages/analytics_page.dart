@@ -55,7 +55,7 @@ class AnalyticsPage extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _CategoryDistribution(
-                              categories: overview.categories,
+                              categories: overview.categoriesFor(state.selectedPeriod),
                             ),
                           ),
                           const SizedBox(width: 24),
@@ -63,7 +63,7 @@ class AnalyticsPage extends StatelessWidget {
                             flex: 2,
                             child: _SpendingTrendCard(
                               insight: insight,
-                              categories: overview.categories,
+                              categories: overview.categoriesFor(state.selectedPeriod),
                             ),
                           ),
                         ],
@@ -72,11 +72,12 @@ class AnalyticsPage extends StatelessWidget {
 
                     return Column(
                       children: [
-                        _CategoryDistribution(categories: overview.categories),
+                        _CategoryDistribution(
+                            categories: overview.categoriesFor(state.selectedPeriod)),
                         const SizedBox(height: 24),
                         _SpendingTrendCard(
                           insight: insight,
-                          categories: overview.categories,
+                          categories: overview.categoriesFor(state.selectedPeriod),
                         ),
                       ],
                     );
@@ -147,7 +148,7 @@ class _AnalyticsHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'FINANCIAL INSIGHTS',
+                  'NET CASH FLOW',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -157,14 +158,69 @@ class _AnalyticsHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  formatCurrency(insight.headlineAmount, decimals: 2),
+                  formatCurrency(
+                      insight.totalIncome - insight.totalExpense,
+                      decimals: 2),
                   style: GoogleFonts.manrope(
                     fontSize: isWide ? 46 : 38,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -2,
+                    color: (insight.totalIncome - insight.totalExpense >= 0)
+                        ? AppTheme.primary
+                        : AppTheme.danger,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'INCOME',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          formatCurrency(insight.totalIncome),
+                          style: GoogleFonts.manrope(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 32),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'EXPENSE',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          formatCurrency(insight.totalExpense),
+                          style: GoogleFonts.manrope(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 Text(
                   insight.comparisonLabel,
                   style: GoogleFonts.inter(
@@ -175,17 +231,22 @@ class _AnalyticsHeader extends StatelessWidget {
                 ),
               ],
             ),
-            if (!isWide) const SizedBox(height: 20),
-            FinxlSegmentedControl<AnalyticsPeriod>(
-              value: selectedPeriod,
-              options: const [
-                SegmentedOption(
-                  value: AnalyticsPeriod.monthly,
-                  label: 'Monthly',
+            if (!isWide) const SizedBox(height: 24),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FinxlSegmentedControl<AnalyticsPeriod>(
+                  value: selectedPeriod,
+                  options: const [
+                    SegmentedOption(
+                      value: AnalyticsPeriod.monthly,
+                      label: 'Monthly',
+                    ),
+                    SegmentedOption(value: AnalyticsPeriod.weekly, label: 'Weekly'),
+                  ],
+                  onChanged: context.read<AnalyticsCubit>().selectPeriod,
                 ),
-                SegmentedOption(value: AnalyticsPeriod.weekly, label: 'Weekly'),
               ],
-              onChanged: context.read<AnalyticsCubit>().selectPeriod,
             ),
           ],
         );
@@ -267,11 +328,9 @@ class _CategoryDistribution extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-          Wrap(
-            spacing: 16,
-            runSpacing: 12,
+          Column(
             children: categories
-                .map((item) => _LegendItem(category: item))
+                .map((item) => _CategoryListRow(category: item))
                 .toList(growable: false),
           ),
         ],
@@ -280,16 +339,16 @@ class _CategoryDistribution extends StatelessWidget {
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({required this.category});
+class _CategoryListRow extends StatelessWidget {
+  const _CategoryListRow({required this.category});
 
   final AnalyticsCategory category;
 
   @override
   Widget build(BuildContext context) {
     final accent = AppTheme.accentColor(category.accent);
-    return SizedBox(
-      width: 150,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Container(
@@ -297,17 +356,37 @@ class _LegendItem extends StatelessWidget {
             height: 12,
             decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               category.label,
-              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.onSurfaceVariant,
+                color: AppTheme.onSurface,
               ),
             ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                formatCurrency(category.amount),
+                style: GoogleFonts.manrope(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+              Text(
+                formatPercent(category.percentage),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ],
       ),

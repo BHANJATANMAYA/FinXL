@@ -17,6 +17,7 @@ class FinanceLookups {
     ),
     TransactionCategory(id: 'fitness', label: 'Gym', iconKey: 'gym'),
     TransactionCategory(id: 'other', label: 'Other', iconKey: 'other'),
+    TransactionCategory(id: 'income', label: 'Income', iconKey: 'cash'),
   ];
 
   static const List<String> _accents = [
@@ -35,6 +36,7 @@ class FinanceLookups {
     'subscriptions': 6,
     'fitness': 7,
     'other': 8,
+    'income': 9,
   };
 
   static int transactionCategoryDbId(String formId) {
