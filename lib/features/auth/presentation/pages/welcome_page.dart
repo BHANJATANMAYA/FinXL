@@ -51,11 +51,24 @@ class WelcomePage extends StatelessWidget {
                         Container(
                           height: 64,
                           width: 64,
-                          padding: const EdgeInsets.all(12),
-                          decoration: AppTheme.cardDecoration(
-                            color: AppTheme.surfaceContainerLowest,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.onSurface.withValues(alpha: 0.12),
+                                blurRadius: 24,
+                                spreadRadius: -2,
+                                offset: const Offset(0, 12),
+                              ),
+                            ],
                           ),
-                          child: Image.asset('assets/logo/finxl_logo.png'),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.asset(
+                              'assets/logo/finxl_logo.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         RichText(

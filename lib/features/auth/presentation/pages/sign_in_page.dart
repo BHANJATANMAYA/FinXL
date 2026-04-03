@@ -84,7 +84,7 @@ class _SignInPageState extends State<SignInPage> {
 
                           // Email Field
                           Text(
-                            'EMAIL / PHONE',
+                            'EMAIL',
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   letterSpacing: 1.2,
@@ -97,7 +97,7 @@ class _SignInPageState extends State<SignInPage> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
-                              hintText: 'name@example.com',
+                              hintText: 'Enter your email',
                             ),
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
@@ -312,7 +312,8 @@ class _SignInPageState extends State<SignInPage> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Your data is सुरक्षित 🔒',
+                          // 'Your data is सुरक्षित 🔒',
+                          'Your data is Secure',
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: AppTheme.onSurfaceVariant.withValues(
@@ -340,18 +341,36 @@ class _SignInPageState extends State<SignInPage> {
         Container(
           height: 64,
           width: 64,
-          padding: const EdgeInsets.all(12),
-          decoration: AppTheme.cardDecoration(
-            color: AppTheme.surfaceContainerLowest,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.onSurface.withValues(alpha: 0.12),
+                blurRadius: 24,
+                spreadRadius: -2,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
-          child: Image.asset('assets/logo/finxl_logo.png'),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.asset('assets/logo/finxl_logo.png', fit: BoxFit.cover),
+          ),
         ),
         const SizedBox(height: 16),
-        Text(
-          'FinXL',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1,
+        RichText(
+          text: TextSpan(
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1,
+            ),
+            children: const [
+              TextSpan(text: 'Fin'),
+              TextSpan(
+                text: 'XL',
+                style: TextStyle(color: AppTheme.primary),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

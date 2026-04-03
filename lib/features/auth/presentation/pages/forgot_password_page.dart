@@ -60,9 +60,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           ),
           title: Text(
             'Back',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppTheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(color: AppTheme.onSurfaceVariant),
           ),
           titleSpacing: 0,
         ),
@@ -73,19 +73,23 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               top: -100,
               right: -100,
               child: _buildBlurCircle(
-                  color: AppTheme.primaryContainer.withValues(alpha: 0.10)),
+                color: AppTheme.primaryContainer.withValues(alpha: 0.10),
+              ),
             ),
             Positioned(
               bottom: -100,
               left: -100,
               child: _buildBlurCircle(
-                  color: AppTheme.secondary.withValues(alpha: 0.10)),
+                color: AppTheme.secondary.withValues(alpha: 0.10),
+              ),
             ),
             SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 32),
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
                   child: Column(
                     children: [
                       // Icon
@@ -103,9 +107,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       const SizedBox(height: 32),
                       Text(
                         'Forgot Password?',
-                        style: Theme.of(context)
-                            .textTheme
-                            .displaySmall
+                        style: Theme.of(context).textTheme.displaySmall
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
                               letterSpacing: -1,
@@ -116,9 +118,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         "Don't worry, it happens. Enter your email or phone number and we'll send you a link to reset your password.",
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.onSurfaceVariant,
-                              height: 1.6,
-                            ),
+                          color: AppTheme.onSurfaceVariant,
+                          height: 1.6,
+                        ),
                       ),
                       const SizedBox(height: 48),
 
@@ -135,10 +137,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'EMAIL / PHONE',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
+                                'EMAIL',
+                                style: Theme.of(context).textTheme.labelSmall
                                     ?.copyWith(
                                       letterSpacing: 1.5,
                                       fontWeight: FontWeight.bold,
@@ -150,7 +150,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
                                 decoration: const InputDecoration(
-                                  hintText: 'name@company.com',
+                                  hintText: 'Enter your email',
                                   prefixIcon: Icon(
                                     Icons.alternate_email_rounded,
                                     color: AppTheme.onSurfaceVariant,
@@ -158,8 +158,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 ),
                                 validator: (v) =>
                                     (v == null || v.trim().isEmpty)
-                                        ? 'Please enter your email'
-                                        : null,
+                                    ? 'Please enter your email'
+                                    : null,
                               ),
                               const SizedBox(height: 32),
 
@@ -172,8 +172,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                     height: 56,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(32),
+                                        borderRadius: BorderRadius.circular(32),
                                         gradient: AppTheme.primaryGradient,
                                         boxShadow: [
                                           BoxShadow(
@@ -187,8 +186,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                       child: Material(
                                         color: Colors.transparent,
                                         child: InkWell(
-                                          borderRadius:
-                                              BorderRadius.circular(32),
+                                          borderRadius: BorderRadius.circular(
+                                            32,
+                                          ),
                                           onTap: isLoading ? null : _sendReset,
                                           child: Row(
                                             mainAxisAlignment:
@@ -200,9 +200,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                                   width: 24,
                                                   child:
                                                       CircularProgressIndicator(
-                                                    color: Colors.white,
-                                                    strokeWidth: 2.5,
-                                                  ),
+                                                        color: Colors.white,
+                                                        strokeWidth: 2.5,
+                                                      ),
                                                 )
                                               else ...[
                                                 Text(
@@ -234,7 +234,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                               const SizedBox(height: 32),
                               const Divider(
-                                  color: AppTheme.surfaceContainerHighest),
+                                color: AppTheme.surfaceContainerHighest,
+                              ),
                               const SizedBox(height: 32),
 
                               Row(
@@ -280,18 +281,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           Icon(
                             Icons.verified_user_rounded,
                             size: 16,
-                            color: AppTheme.onSurfaceVariant
-                                .withValues(alpha: 0.6),
+                            color: AppTheme.onSurfaceVariant.withValues(
+                              alpha: 0.6,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'SECURELY PROTECTED BY FINXL SECURITY',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
-                                  color: AppTheme.onSurfaceVariant
-                                      .withValues(alpha: 0.6),
+                                  color: AppTheme.onSurfaceVariant.withValues(
+                                    alpha: 0.6,
+                                  ),
                                   letterSpacing: 1.5,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 10,
@@ -303,10 +304,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       Text(
                         '© 2024 FinXL Financial Technologies. All rights reserved.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.onSurfaceVariant
-                                  .withValues(alpha: 0.5),
-                              fontSize: 11,
-                            ),
+                          color: AppTheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),

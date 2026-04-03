@@ -33,15 +33,23 @@ class _SignUpPageState extends State<SignUpPage> {
   void _evaluatePassword() {
     final pass = _passwordController.text;
     int score = 0;
-    
-    if (pass.length >= 6) score++;
-    if (RegExp(r'[a-z]').hasMatch(pass) && RegExp(r'[A-Z]').hasMatch(pass)) score++;
-    if (RegExp(r'[0-9]').hasMatch(pass)) score++;
-    if (RegExp(r'[^a-zA-Z0-9]').hasMatch(pass)) score++;
+
+    if (pass.length >= 6) {
+      score++;
+    }
+    if (RegExp(r'[a-z]').hasMatch(pass) && RegExp(r'[A-Z]').hasMatch(pass)) {
+      score++;
+    }
+    if (RegExp(r'[0-9]').hasMatch(pass)) {
+      score++;
+    }
+    if (RegExp(r'[^a-zA-Z0-9]').hasMatch(pass)) {
+      score++;
+    }
 
     String text = 'Weak Password';
     Color color = Colors.red.shade400;
-    
+
     if (score == 1) {
       text = 'Weak Password';
       color = Colors.red.shade400;
@@ -159,22 +167,26 @@ class _SignUpPageState extends State<SignUpPage> {
                           // Full Name Field
                           _buildLabel(context, 'FULL NAME'),
                           const SizedBox(height: 8),
-                          _buildUnderlineTextField(
+                          TextFormField(
                             controller: _nameController,
-                            hintText: 'Enter your full name',
+                            decoration: const InputDecoration(
+                              hintText: 'Enter your full name',
+                            ),
                             validator: (v) => (v == null || v.trim().isEmpty)
                                 ? 'Please enter your name'
                                 : null,
                           ),
                           const SizedBox(height: 32),
 
-                          // Email / Phone Field
-                          _buildLabel(context, 'EMAIL / PHONE'),
+                          // Email Field
+                          _buildLabel(context, 'EMAIL'),
                           const SizedBox(height: 8),
-                          _buildUnderlineTextField(
+                          TextFormField(
                             controller: _emailController,
-                            hintText: 'Enter email or phone number',
                             keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter your email',
+                            ),
                             validator: (v) => (v == null || v.trim().isEmpty)
                                 ? 'Please enter your email'
                                 : null,
@@ -184,48 +196,79 @@ class _SignUpPageState extends State<SignUpPage> {
                           // Password Field
                           _buildLabel(context, 'PASSWORD'),
                           const SizedBox(height: 8),
-                          _buildUnderlineTextField(
+                          TextFormField(
                             controller: _passwordController,
-                            hintText: 'Create a password',
                             obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              hintText: 'Create a password',
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: AppTheme.onSurfaceVariant.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Please enter a password';
-                              if (v.length < 6) return 'Password must be at least 6 characters';
-                              if (!RegExp(r'[a-z]').hasMatch(v) || !RegExp(r'[A-Z]').hasMatch(v)) {
+                              if (v == null || v.isEmpty) {
+                                return 'Please enter a password';
+                              }
+                              if (v.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              if (!RegExp(r'[a-z]').hasMatch(v) ||
+                                  !RegExp(r'[A-Z]').hasMatch(v)) {
                                 return 'Must have lowercase and uppercase letters';
                               }
-                              if (!RegExp(r'[0-9]').hasMatch(v)) return 'Must contain a number';
-                              if (!RegExp(r'[^a-zA-Z0-9]').hasMatch(v)) return 'Must contain a special symbol';
+                              if (!RegExp(r'[0-9]').hasMatch(v)) {
+                                return 'Must contain a number';
+                              }
+                              if (!RegExp(r'[^a-zA-Z0-9]').hasMatch(v)) {
+                                return 'Must contain a special symbol';
+                              }
                               return null;
                             },
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                color: AppTheme.onSurfaceVariant.withValues(
-                                  alpha: 0.6,
-                                ),
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
                           ),
                           const SizedBox(height: 12),
 
                           // Security Score Indicator
                           Row(
                             children: [
-                              Expanded(child: _buildPasswordStrengthBar(_passwordScore >= 1, _passwordStrengthColor)),
+                              Expanded(
+                                child: _buildPasswordStrengthBar(
+                                  _passwordScore >= 1,
+                                  _passwordStrengthColor,
+                                ),
+                              ),
                               const SizedBox(width: 4),
-                              Expanded(child: _buildPasswordStrengthBar(_passwordScore >= 2, _passwordStrengthColor)),
+                              Expanded(
+                                child: _buildPasswordStrengthBar(
+                                  _passwordScore >= 2,
+                                  _passwordStrengthColor,
+                                ),
+                              ),
                               const SizedBox(width: 4),
-                              Expanded(child: _buildPasswordStrengthBar(_passwordScore >= 3, _passwordStrengthColor)),
+                              Expanded(
+                                child: _buildPasswordStrengthBar(
+                                  _passwordScore >= 3,
+                                  _passwordStrengthColor,
+                                ),
+                              ),
                               const SizedBox(width: 4),
-                              Expanded(child: _buildPasswordStrengthBar(_passwordScore >= 4, _passwordStrengthColor)),
+                              Expanded(
+                                child: _buildPasswordStrengthBar(
+                                  _passwordScore >= 4,
+                                  _passwordStrengthColor,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -445,54 +488,11 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildUnderlineTextField({
-    required String hintText,
-    TextEditingController? controller,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: const TextStyle(fontSize: 18),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(
-          color: AppTheme.onSurfaceVariant.withValues(alpha: 0.4),
-          fontSize: 18,
-          fontWeight: FontWeight.normal,
-        ),
-        suffixIcon: suffixIcon,
-        filled: false,
-        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        border: UnderlineInputBorder(
-          borderSide: BorderSide(
-            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
-          ),
-        ),
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(
-            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
-          ),
-        ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
-        ),
-      ),
-    );
-  }
-
   Widget _buildPasswordStrengthBar(bool isFilled, Color fillAccent) {
     return Container(
       height: 4,
       decoration: BoxDecoration(
-        color: isFilled
-            ? fillAccent
-            : AppTheme.surfaceContainerHighest,
+        color: isFilled ? fillAccent : AppTheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(4),
       ),
     );
