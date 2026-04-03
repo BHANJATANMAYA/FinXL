@@ -1,4 +1,4 @@
-package com.example.finxl
+package com.tanmay.finxl
 
 import io.flutter.embedding.android.FlutterActivity
 

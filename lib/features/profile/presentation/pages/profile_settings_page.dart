@@ -4,6 +4,7 @@ import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
 import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/utils/formatters.dart';
+import 'package:finxl/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:finxl/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
 import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart';
@@ -134,13 +135,70 @@ class ProfileSettingsPage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 16),
-
-            //todo : add logout button
+            const SizedBox(height: 24),
+            SectionCard(
+              child: _ActionTile(
+                icon: Icons.logout_rounded,
+                title: 'Log out',
+                subtitle: 'Securely completely sign out.',
+                isDestructive: true,
+                onTap: () => _showLogoutDialog(context),
+              ),
+            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _showLogoutDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceContainerLowest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Log Out',
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          'Are you sure you want to log out of FinXL?',
+          style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                color: AppTheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Log Out',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && context.mounted) {
+      context.read<AuthCubit>().signOut();
+    }
   }
 }
 
@@ -149,43 +207,57 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      child: Row(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.surfaceContainer,
-            ),
-            child: const Icon(Icons.person, size: 34, color: AppTheme.primary),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'FinXL User',
-                  style: GoogleFonts.manrope(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        String displayName = 'FinXL User';
+        if (state is AuthAuthenticated) {
+          final user = state.user;
+          // Use full name, fallback to email prefix if full name is missing
+          displayName = user.fullName ?? 
+              (user.email != null ? user.email!.split('@').first : 'FinXL User');
+        }
+
+        return SectionCard(
+          child: Row(
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.surfaceContainer,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Offline-first personal finance command center.',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
+                child: const Icon(Icons.person, size: 34, color: AppTheme.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: GoogleFonts.manrope(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Personal finance command center.',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -250,15 +322,19 @@ class _ActionTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.isDestructive = false,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final bool isDestructive;
 
   @override
   Widget build(BuildContext context) {
+    final color = isDestructive ? Theme.of(context).colorScheme.error : AppTheme.primary;
+    
     return ListTile(
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
@@ -266,20 +342,23 @@ class _ActionTile extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLow,
+          color: isDestructive ? color.withValues(alpha: 0.1) : AppTheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, color: AppTheme.primary),
+        child: Icon(icon, color: color),
       ),
       title: Text(
         title,
-        style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+        style: GoogleFonts.manrope(
+          fontWeight: FontWeight.w800,
+          color: isDestructive ? color : null,
+        ),
       ),
       subtitle: Text(
         subtitle,
         style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: isDestructive ? null : const Icon(Icons.chevron_right),
     );
   }
 }

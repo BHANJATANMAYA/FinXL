@@ -4,6 +4,9 @@ import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/features/analytics/data/repositories/analytics_repository_impl.dart';
 import 'package:finxl/features/analytics/domain/repositories/analytics_repository.dart';
 import 'package:finxl/features/analytics/presentation/cubit/analytics_cubit.dart';
+import 'package:finxl/features/auth/data/repositories/supabase_auth_repository_impl.dart';
+import 'package:finxl/features/auth/domain/repositories/auth_repository.dart';
+import 'package:finxl/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:finxl/features/bills/data/repositories/bills_repository_impl.dart';
 import 'package:finxl/features/bills/domain/repositories/bills_repository.dart';
 import 'package:finxl/features/bills/presentation/cubit/bills_cubit.dart';
@@ -20,6 +23,8 @@ import 'package:finxl/features/transactions/data/repositories/transaction_reposi
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 class FinXL extends StatelessWidget {
   const FinXL({super.key});
@@ -30,6 +35,13 @@ class FinXL extends StatelessWidget {
 
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider<AuthRepository>(
+          create: (_) => SupabaseAuthRepositoryImpl(
+            Supabase.instance.client,
+            googleWebClientId: dotenv.env['GOOGLE_WEB_CLIENT_ID'],
+            googleIosClientId: dotenv.env['GOOGLE_IOS_CLIENT_ID'],
+          ),
+        ),
         RepositoryProvider<DashboardRepository>(
           create: (_) => DashboardRepositoryImpl(),
         ),
@@ -54,6 +66,10 @@ class FinXL extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider<AuthCubit>(
+            create: (context) =>
+                AuthCubit(authRepository: context.read<AuthRepository>()),
+          ),
           BlocProvider(
             create: (context) =>
                 DashboardCubit(context.read<DashboardRepository>())..load(),
@@ -77,11 +93,20 @@ class FinXL extends StatelessWidget {
             )..load(),
           ),
         ],
-        child: MaterialApp.router(
-          title: 'FinXL',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          routerConfig: AppRouter.router,
+        child: BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state is AuthAuthenticated) {
+              AppRouter.router.go(AppRouter.dashboardPath);
+            } else if (state is AuthUnauthenticated) {
+              AppRouter.router.go(AppRouter.welcomePath);
+            }
+          },
+          child: MaterialApp.router(
+            title: 'FinXL',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            routerConfig: AppRouter.router,
+          ),
         ),
       ),
     );

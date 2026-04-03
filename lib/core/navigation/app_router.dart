@@ -1,6 +1,10 @@
 import 'package:finxl/core/navigation/app_tab.dart';
 import 'package:finxl/features/analytics/presentation/pages/analytics_page.dart';
 import 'package:finxl/features/app_shell/presentation/pages/app_shell_page.dart';
+import 'package:finxl/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:finxl/features/auth/presentation/pages/sign_in_page.dart';
+import 'package:finxl/features/auth/presentation/pages/sign_up_page.dart';
+import 'package:finxl/features/auth/presentation/pages/welcome_page.dart';
 import 'package:finxl/features/bills/presentation/pages/add_bill_page.dart';
 import 'package:finxl/features/bills/presentation/pages/bills_page.dart';
 import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
@@ -23,7 +27,13 @@ import 'package:go_router/go_router.dart';
 class AppRouter {
   AppRouter._();
 
+  static const String welcomePath = '/welcome';
+  static const String signInPath = '/sign-in';
+  static const String signUpPath = '/sign-up';
+  static const String forgotPasswordPath = '/forgot-password';
+  
   static const String profilePath = '/profile';
+  static const String dashboardPath = '/dashboard';
   static const String addTransactionPath = '/transaction/new';
   static const String transactionsHistoryPath = '/transactions';
   static const String addGoalPath = '/goals/new';
@@ -39,8 +49,32 @@ class AppRouter {
 
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: AppTab.dashboard.location,
+    initialLocation: welcomePath,
     routes: [
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: welcomePath,
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: WelcomePage()),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: signInPath,
+        pageBuilder: (context, state) =>
+            _buildPage(state, const SignInPage()),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: signUpPath,
+        pageBuilder: (context, state) =>
+            _buildPage(state, const SignUpPage()),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: forgotPasswordPath,
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ForgotPasswordPage()),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return AppShellPage(navigationShell: navigationShell);
