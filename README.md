@@ -1,28 +1,30 @@
 <div align="center">
   <h1>💰 FinXL</h1>
-  <p><strong>A Modern, Responsive Personal Finance Tracking Application</strong></p>
+  <p><strong>A Modern, Intelligent, and Secure Personal Finance Tracking Application</strong></p>
   
   <p>
     <a href="https://flutter.dev/"><img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" /></a>
     <a href="https://dart.dev/"><img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" /></a>
+    <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" /></a>
     <a href="https://pub.dev/packages/flutter_bloc"><img src="https://img.shields.io/badge/State_Management-BLoC-blue?style=for-the-badge" alt="BLoC" /></a>
-    <a href="https://pub.dev/packages/sqflite"><img src="https://img.shields.io/badge/Database-Sqflite-green?style=for-the-badge" alt="Sqflite" /></a>
   </p>
 </div>
 
 ---
 
-FinXL is a comprehensive personal finance tracking application built with Flutter. It provides users with an intuitive, beautifully designed interface to manage their financial ecosystem, track goals, monitor budgets, and oversee their bills—all while keeping data securely stored on their device.
+FinXL is a comprehensive personal finance tracking application built with Flutter and powered by Supabase. It provides users with an intuitive, beautifully designed interface to manage their financial ecosystem, track goals, monitor budgets, and oversee their bills—all while keeping data synced and secure.
 
 ## ✨ Key Features
 
+- **🔐 Secure Authentication:** Seamlessly sign up and log in using Email/Password or **Google Sign-In**. 
+- **🛡️ Password Security Score:** Real-time password strength indicator enforcing strict security standards (Symbol, Case-sensitivity, Numbers).
 - **📊 Dashboard:** Get an at-a-glance view of your total balance, monthly income, spending, and recent transaction highlights.
 - **📈 Analytics:** Dive into in-depth breakdowns of your expenses and identify spending trends over time.
 - **🎯 Goals Tracking:** Set financial milestones, allocate funds, and monitor your progress towards achieving them.
 - **💰 Budgeting:** Organize your spending into custom categories with defined monthly limits to stay on track.
 - **🗓️ Bills Management:** Keep track of upcoming bills, manage recurring payments, and receive local notifications before due dates.
 - **🎨 Custom UI System:** Enjoy a cohesive, sleek design system featuring glassmorphism elements, custom routing patterns, and fully responsive layouts.
-- **📴 Offline First:** All data is stored locally using `sqflite`, ensuring your financial information is private and accessible without an internet connection.
+- **☁️ Cloud Sync:** Powered by Supabase, your financial data is securely synced across devices while maintaining offline-first responsiveness.
 
 ## 🛠️ Architecture & Tech Stack
 
@@ -30,15 +32,12 @@ The application strictly adheres to a feature-based architecture pattern (inspir
 
 ### Tech Stack
 - **Framework:** [Flutter](https://flutter.dev/) (SDK ^3.11.1)
-- **Language:** Dart
+- **Backend-as-a-Service:** [Supabase](https://supabase.com/)
 - **State Management:** `flutter_bloc` (utilizing the Cubit pattern)
-- **Database:** `sqflite` for fast, reliable local data persistence
-- **Routing:** `go_router` combined with a dynamic `IndexedStack` inside an `AppShell` for seamless tab transitions
-- **Notifications:** `flutter_local_notifications` and `flutter_timezone` for bill reminders
-- **Other Core Dependencies:**
-  - `equatable` (Value equality)
-  - `google_fonts` (Typography)
-  - `path_provider` (Local storage access)
+- **Database:** `sqflite` (local) + Supabase (cloud)
+- **Routing:** `go_router`
+- **Environment Management:** `flutter_dotenv`
+- **Authentication:** `supabase_flutter` & `google_sign_in`
 
 ## 📂 Project Structure
 
@@ -49,13 +48,12 @@ lib/
 ├── core/                  # Shared utilities, routing, and low-level services
 │   ├── common/            # Shared UI components and logic
 │   ├── database/          # Sqflite database setup & migrations
-│   ├── models/            # Core domain entities (Transactions, Bills, Goals, etc.)
 │   ├── navigation/        # App routing configuration
 │   ├── notifications/     # Local notification service logic
-│   ├── presentation/      # Shared presentation layer logic
 │   ├── theme/             # Design system, colors, and typography
 │   └── utils/             # Helper functions and extensions
 └── features/              # Feature modules containing their own UI and Logic
+    ├── auth/              # Authentication (Sign In, Sign Up, Google Auth)
     ├── analytics/         # Data breakdown and visual charts
     ├── app_shell/         # Main Navigation Container & Bottom App Bar
     ├── bills/             # Bill tracking and reminders
@@ -72,13 +70,28 @@ Follow these steps to get a local copy up and running:
 
 ### Prerequisites
 - Ensure you have the [Flutter SDK](https://docs.flutter.dev/get-started/install) installed.
-- An IDE such as [VS Code](https://code.visualstudio.com/) or [Android Studio](https://developer.android.com/studio).
+- A Supabase account and project.
+- Google Cloud Console project (for Google Auth).
+
+### Configuration
+
+1. **Create a `.env` file** in the root directory:
+   ```env
+   SUPABASE_URL=your_supabase_project_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   GOOGLE_WEB_CLIENT_ID=your_google_web_client_id
+   GOOGLE_IOS_CLIENT_ID=your_google_ios_client_id
+   ```
+
+2. **Supabase Setup:**
+   - Enable Email/Password Auth.
+   - Enable Google Auth Provider.
 
 ### Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/finxl.git
+   git clone https://github.com/BHANJATANMAYA/finxl.git
    cd finxl
    ```
 
@@ -96,7 +109,6 @@ Follow these steps to get a local copy up and running:
 ## 📱 Screenshots
 
 > **Coming Soon!**
-> You can add screenshots of your Dashboard, Analytics, and Budget screens here by placing them in an `assets/images/` folder and linking them. For example: `<img src="assets/images/dashboard.png" width="200" />`
 
 ## 🤝 Contributing
 
