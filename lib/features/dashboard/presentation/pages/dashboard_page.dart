@@ -1,22 +1,25 @@
+import 'dart:math' as math;
+
 import 'package:finxl/core/common/load_status.dart';
-import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
-import 'package:finxl/core/presentation/widgets/progress_bar.dart';
-import 'package:finxl/core/presentation/widgets/section_card.dart';
-import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/models/bill.dart';
 import 'package:finxl/core/models/budget.dart';
 import 'package:finxl/core/models/goal.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
+import 'package:finxl/core/navigation/app_router.dart';
+import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
+import 'package:finxl/core/presentation/widgets/progress_bar.dart';
+import 'package:finxl/core/presentation/widgets/section_card.dart';
+import 'package:finxl/core/presentation/widgets/state_message_view.dart';
+import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/dashboard/domain/entities/dashboard_snapshot.dart';
 import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart';
-import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
-import 'package:finxl/features/transactions/presentation/cubit/transactions_history_cubit.dart';
-import 'package:finxl/features/transactions/presentation/pages/transactions_history_page.dart';
+import 'package:finxl/features/transactions/presentation/widgets/transaction_list_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -31,9 +34,11 @@ class DashboardPage extends StatelessWidget {
         }
 
         if (state.status == LoadStatus.failure && state.snapshot == null) {
-          return _FailureState(
+          return StateMessageView(
             message: state.errorMessage ?? 'Unable to load dashboard data.',
-            onRetry: () => context.read<DashboardCubit>().load(),
+            icon: Icons.dashboard_outlined,
+            actionLabel: 'Retry',
+            onAction: () => context.read<DashboardCubit>().load(),
           );
         }
 
@@ -90,30 +95,6 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-class _FailureState extends StatelessWidget {
-  const _FailureState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _BalanceSection extends StatelessWidget {
   const _BalanceSection({required this.snapshot});
 
@@ -121,6 +102,9 @@ class _BalanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPositive = snapshot.savedThisMonth >= 0;
+    final badgeColor = isPositive ? AppTheme.primary : AppTheme.danger;
+
     return Column(
       children: [
         Text(
@@ -147,20 +131,26 @@ class _BalanceSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: snapshot.savedThisMonth >= 0 ? AppTheme.primary.withValues(alpha: 0.1) : AppTheme.danger.withValues(alpha: 0.1),
+            color: badgeColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(22),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(snapshot.savedThisMonth >= 0 ? Icons.trending_up : Icons.trending_down, color: snapshot.savedThisMonth >= 0 ? AppTheme.primary : AppTheme.danger, size: 18),
+              Icon(
+                isPositive ? Icons.trending_up : Icons.trending_down,
+                color: badgeColor,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
-                snapshot.savedThisMonth >= 0 ? 'You saved ${formatCurrency(snapshot.savedThisMonth)} this month' : 'You overspent ${formatCurrency(snapshot.savedThisMonth.abs())} this month',
+                isPositive
+                    ? 'You saved ${formatCurrency(snapshot.savedThisMonth)} this month'
+                    : 'You overspent ${formatCurrency(snapshot.savedThisMonth.abs())} this month',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: snapshot.savedThisMonth >= 0 ? AppTheme.primary : AppTheme.danger,
+                  color: badgeColor,
                 ),
               ),
             ],
@@ -301,6 +291,8 @@ class _WeeklyTrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final peak = snapshot.weeklyTrend.fold<double>(0, math.max);
+
     return SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,17 +331,15 @@ class _WeeklyTrendCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(snapshot.weeklyTrend.length, (index) {
-                final peak = snapshot.weeklyTrend.reduce(
-                  (a, b) => a > b ? a : b,
-                );
-                final isPeak = snapshot.weeklyTrend[index] == peak;
+                final value = snapshot.weeklyTrend[index];
+                final isPeak = peak > 0 && value == peak;
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Align(
                       alignment: Alignment.bottomCenter,
                       child: FractionallySizedBox(
-                        heightFactor: snapshot.weeklyTrend[index],
+                        heightFactor: value,
                         child: Container(
                           decoration: BoxDecoration(
                             color: isPeak
@@ -456,18 +446,7 @@ class _RecentTransactionsCard extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider(
-                      create: (ctx) => TransactionsHistoryCubit(
-                        ctx.read<TransactionRepository>(),
-                      ),
-                      child: const TransactionsHistoryPage(),
-                    ),
-                  ),
-                );
-              },
+              onPressed: () => context.push(AppRouter.transactionsHistoryPath),
               style: TextButton.styleFrom(
                 foregroundColor: AppTheme.primary,
                 padding: EdgeInsets.zero,
@@ -485,67 +464,7 @@ class _RecentTransactionsCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        SectionCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: List.generate(transactions.length, (index) {
-              final transaction = transactions[index];
-              final category = FinanceLookups.transactionCategory(
-                transaction.categoryId,
-              );
-              final isIncome = transaction.type == core.TransactionType.income;
-              final amountColor =
-                  isIncome ? AppTheme.primary : AppTheme.onSurface;
-              final prefix = isIncome ? '+' : '-';
-
-              return Column(
-                children: [
-                  ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        resolveIcon(category.iconKey),
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    title: Text(
-                      transaction.description,
-                      style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    subtitle: Text(
-                      transaction.paymentMethod != 'N/A'
-                          ? '${FinanceLookups.formatShortDate(transaction.date)} • ${transaction.paymentMethod}'
-                          : FinanceLookups.formatShortDate(transaction.date),
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                    trailing: Text(
-                      '$prefix${formatCurrency(transaction.amount)}',
-                      style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: amountColor,
-                      ),
-                    ),
-                  ),
-                  if (index < transactions.length - 1)
-                    const Divider(height: 1, indent: 80, endIndent: 16),
-                ],
-              );
-            }),
-          ),
-        ),
+        TransactionListCard(transactions: transactions),
       ],
     );
   }
@@ -560,49 +479,55 @@ class _BudgetAlertsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: alerts.map((budget) {
-        final isExceeded = budget.spentAmount > budget.limitAmount;
-        final color = isExceeded ? AppTheme.danger : AppTheme.tertiary;
-        final icon = isExceeded ? Icons.error_outline : Icons.warning_amber_rounded;
-        
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: color),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isExceeded ? 'Budget Exceeded' : 'Nearing Budget Limit',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                      ),
-                    ),
-                    Text(
-                      '${budget.categoryName} (${formatCurrency(budget.spentAmount)} / ${formatCurrency(budget.limitAmount)})',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+      children: alerts
+          .map((budget) {
+            final isExceeded = budget.spentAmount > budget.limitAmount;
+            final color = isExceeded ? AppTheme.danger : AppTheme.tertiary;
+            final icon = isExceeded
+                ? Icons.error_outline
+                : Icons.warning_amber_rounded;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
               ),
-            ],
-          ),
-        );
-      }).toList(),
+              child: Row(
+                children: [
+                  Icon(icon, color: color),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isExceeded
+                              ? 'Budget Exceeded'
+                              : 'Nearing Budget Limit',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                          ),
+                        ),
+                        Text(
+                          '${budget.categoryName} (${formatCurrency(budget.spentAmount)} / ${formatCurrency(budget.limitAmount)})',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          })
+          .toList(growable: false),
     );
   }
 }
@@ -614,7 +539,10 @@ class _ActiveGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = FinanceLookups.safeRatio(goal.currentAmount, goal.targetAmount);
+    final ratio = FinanceLookups.safeRatio(
+      goal.currentAmount,
+      goal.targetAmount,
+    );
     return SectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -647,7 +575,10 @@ class _ActiveGoalCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child: Text(goal.icon!, style: const TextStyle(fontSize: 20)),
+                    child: Text(
+                      goal.icon!,
+                      style: const TextStyle(fontSize: 20),
+                    ),
                   ),
                 ),
               Expanded(

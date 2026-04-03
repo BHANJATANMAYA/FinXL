@@ -1,11 +1,9 @@
 import 'package:finxl/core/common/load_status.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
-import 'package:finxl/core/presentation/widgets/section_card.dart';
+import 'package:finxl/core/presentation/widgets/state_message_view.dart';
 import 'package:finxl/core/theme/app_theme.dart';
-import 'package:finxl/core/utils/finance_lookups.dart';
-import 'package:finxl/core/utils/formatters.dart';
-import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transactions_history_cubit.dart';
+import 'package:finxl/features/transactions/presentation/widgets/transaction_list_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -48,8 +46,9 @@ class _TransactionsHistoryPageState extends State<TransactionsHistoryPage> {
   }
 
   Map<String, List<core.Transaction>> _groupTransactionsByMonth(
-      List<core.Transaction> transactions) {
-    final Map<String, List<core.Transaction>> grouped = {};
+    List<core.Transaction> transactions,
+  ) {
+    final grouped = <String, List<core.Transaction>>{};
     for (final transaction in transactions) {
       final month = _monthName(transaction.date.month);
       final key = '$month ${transaction.date.year}';
@@ -72,7 +71,7 @@ class _TransactionsHistoryPageState extends State<TransactionsHistoryPage> {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return monthNames[month];
   }
@@ -97,171 +96,84 @@ class _TransactionsHistoryPageState extends State<TransactionsHistoryPage> {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 920),
-          child: BlocBuilder<TransactionsHistoryCubit, TransactionsHistoryState>(
-            builder: (context, state) {
-              if (state.status == LoadStatus.initial ||
-                  (state.status == LoadStatus.loading &&
-                      state.transactions.isEmpty)) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          child:
+              BlocBuilder<TransactionsHistoryCubit, TransactionsHistoryState>(
+                builder: (context, state) {
+                  if (state.status == LoadStatus.initial ||
+                      (state.status == LoadStatus.loading &&
+                          state.transactions.isEmpty)) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-            if (state.status == LoadStatus.failure &&
-                state.transactions.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      state.errorMessage ?? 'An error occurred.',
-                      style: GoogleFonts.inter(color: AppTheme.onSurface),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () =>
+                  if (state.status == LoadStatus.failure &&
+                      state.transactions.isEmpty) {
+                    return StateMessageView(
+                      message:
+                          state.errorMessage ??
+                          'Failed to load transaction history.',
+                      icon: Icons.receipt_long_outlined,
+                      actionLabel: 'Retry',
+                      onAction: () =>
                           context.read<TransactionsHistoryCubit>().load(),
-                      child: const Text('Retry'),
+                    );
+                  }
+
+                  if (state.transactions.isEmpty) {
+                    return const StateMessageView(
+                      message: 'No transactions found.',
+                      icon: Icons.inbox_outlined,
+                    );
+                  }
+
+                  final grouped = _groupTransactionsByMonth(state.transactions);
+                  final keys = grouped.keys.toList(growable: false);
+
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 16,
                     ),
-                  ],
-                ),
-              );
-            }
+                    itemCount: keys.length + (state.hasReachedMax ? 0 : 1),
+                    itemBuilder: (context, index) {
+                      if (index >= keys.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
 
-            if (state.transactions.isEmpty) {
-              return Center(
-                child: Text(
-                  'No transactions found.',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-              );
-            }
+                      final key = keys[index];
+                      final transactions = grouped[key]!;
 
-            final grouped = _groupTransactionsByMonth(state.transactions);
-            final keys = grouped.keys.toList();
-
-            return ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              itemCount: keys.length + (state.hasReachedMax ? 0 : 1),
-              itemBuilder: (context, index) {
-                if (index >= keys.length) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                final key = keys[index];
-                final transactions = grouped[key]!;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8, bottom: 16),
-                        child: Text(
-                          key.toUpperCase(),
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                            color: AppTheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      SectionCard(
-                        padding: EdgeInsets.zero,
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 32),
                         child: Column(
-                          children: List.generate(
-                            transactions.length,
-                            (tIndex) {
-                              final transaction = transactions[tIndex];
-                              return Column(
-                                children: [
-                                  _HistoryListTile(transaction: transaction),
-                                  if (tIndex < transactions.length - 1)
-                                    const Divider(
-                                      height: 1,
-                                      indent: 80,
-                                      endIndent: 16,
-                                    ),
-                                ],
-                              );
-                            },
-                          ),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 8,
+                                bottom: 16,
+                              ),
+                              child: Text(
+                                key.toUpperCase(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                  color: AppTheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            TransactionListCard(transactions: transactions),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-      ),
-    );
-  }
-}
-
-class _HistoryListTile extends StatelessWidget {
-  const _HistoryListTile({required this.transaction});
-
-  final core.Transaction transaction;
-
-  @override
-  Widget build(BuildContext context) {
-    final category = FinanceLookups.transactionCategory(
-      transaction.categoryId,
-    );
-    final isIncome = transaction.type == core.TransactionType.income;
-    final amountColor = isIncome ? AppTheme.primary : AppTheme.onSurface;
-    final prefix = isIncome ? '+' : '-';
-
-    return ListTile(
-      contentPadding: const EdgeInsets.all(16),
-      leading: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(
-          resolveIcon(category.iconKey),
-          color: AppTheme.primary,
-        ),
-      ),
-      title: Text(
-        transaction.description,
-        style: GoogleFonts.manrope(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      subtitle: Text(
-        transaction.paymentMethod != 'N/A'
-            ? '${FinanceLookups.formatShortDate(transaction.date)} • ${transaction.paymentMethod}'
-            : FinanceLookups.formatShortDate(transaction.date),
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          color: AppTheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: Text(
-        '$prefix${formatCurrency(transaction.amount)}',
-        style: GoogleFonts.manrope(
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-          color: amountColor,
+                      );
+                    },
+                  );
+                },
+              ),
         ),
       ),
     );

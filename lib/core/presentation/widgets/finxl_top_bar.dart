@@ -55,6 +55,7 @@ class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
               onPressed: onNotificationTap,
               icon: const Icon(
                 Icons.notifications_outlined,
+                // Icons.menu_rounded,
                 color: AppTheme.onSurfaceVariant,
               ),
             ),

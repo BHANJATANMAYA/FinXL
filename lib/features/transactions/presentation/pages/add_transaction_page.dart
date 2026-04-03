@@ -2,6 +2,7 @@ import 'package:finxl/core/common/load_status.dart';
 import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
 import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/presentation/widgets/segmented_control.dart';
+import 'package:finxl/core/presentation/widgets/state_message_view.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/analytics/presentation/cubit/analytics_cubit.dart';
@@ -26,9 +27,9 @@ class AddTransactionPage extends StatelessWidget {
           previous.errorMessage != current.errorMessage,
       listener: (context, state) {
         if (state.errorMessage != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         }
         if (state.submitted) {
           context.read<DashboardCubit>().refresh();
@@ -53,10 +54,11 @@ class AddTransactionPage extends StatelessWidget {
           minimum: const EdgeInsets.fromLTRB(24, 0, 24, 24),
           child: SizedBox(
             height: 60,
-            child: BlocBuilder<TransactionCubit, TransactionState>(
-              builder: (context, state) {
+            child: BlocSelector<TransactionCubit, TransactionState, bool>(
+              selector: (state) => state.isSubmitting,
+              builder: (context, isSubmitting) {
                 return FilledButton(
-                  onPressed: state.isSubmitting
+                  onPressed: isSubmitting
                       ? null
                       : context.read<TransactionCubit>().submit,
                   style: FilledButton.styleFrom(
@@ -65,11 +67,14 @@ class AddTransactionPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: state.isSubmitting
+                  child: isSubmitting
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : Text(
                           'Add Transaction',
@@ -83,69 +88,78 @@ class AddTransactionPage extends StatelessWidget {
             ),
           ),
         ),
-        body: BlocBuilder<TransactionCubit, TransactionState>(
-          builder: (context, state) {
-            if (state.status == LoadStatus.loading || state.config == null) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        body:
+            BlocSelector<
+              TransactionCubit,
+              TransactionState,
+              ({LoadStatus status, TransactionFormConfig? config})
+            >(
+              selector: (state) => (status: state.status, config: state.config),
+              builder: (context, viewState) {
+                if (viewState.config == null) {
+                  if (viewState.status == LoadStatus.failure) {
+                    return StateMessageView(
+                      message: 'Unable to load transaction form.',
+                      icon: Icons.receipt_long_outlined,
+                      actionLabel: 'Retry',
+                      onAction: () => context.read<TransactionCubit>().load(),
+                    );
+                  }
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            if (state.status == LoadStatus.failure) {
-              return Center(
-                child: FilledButton(
-                  onPressed: () => context.read<TransactionCubit>().load(),
-                  child: const Text('Retry'),
-                ),
-              );
-            }
-
-            return FinxlPageBody(
-              maxWidth: 760,
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 140),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  FinxlSegmentedControl<TransactionType>(
-                    value: state.type,
-                    options: const [
-                      SegmentedOption(
-                        value: TransactionType.expense,
-                        label: 'Expense',
-                      ),
-                      SegmentedOption(
-                        value: TransactionType.income,
-                        label: 'Income',
-                      ),
-                    ],
-                    onChanged: context.read<TransactionCubit>().selectType,
-                  ),
-                  const SizedBox(height: 40),
-                  const _AmountField(),
-                  const SizedBox(height: 24),
-                  _DateSelector(selectedDate: state.date),
-                  const SizedBox(height: 40),
-                  if (state.type == TransactionType.expense) ...[
-                    _CategoryGrid(
-                      config: state.config!,
-                      selectedCategoryId: state.selectedCategoryId,
-                    ),
-                    const SizedBox(height: 40),
-                  ],
-                  _PaymentMethods(
-                    methods: state.type == TransactionType.income
-                        ? state.config!.paymentMethods
-                            .where((m) => m != PaymentMethod.card)
-                            .toList(growable: false)
-                        : state.config!.paymentMethods,
-                    selected: state.paymentMethod,
-                  ),
-                  const SizedBox(height: 32),
-                  const _NoteField(),
-                ],
-              ),
-            );
-          },
-        ),
+                return const _TransactionFormContent();
+              },
+            ),
       ),
+    );
+  }
+}
+
+class _TransactionFormContent extends StatelessWidget {
+  const _TransactionFormContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return FinxlPageBody(
+      maxWidth: 760,
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 140),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _TransactionTypeSelector(),
+          SizedBox(height: 40),
+          _AmountField(),
+          SizedBox(height: 24),
+          _DateSelector(),
+          SizedBox(height: 40),
+          _CategorySection(),
+          _PaymentMethodsSection(),
+          SizedBox(height: 32),
+          _NoteField(),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransactionTypeSelector extends StatelessWidget {
+  const _TransactionTypeSelector();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<TransactionCubit, TransactionState, TransactionType>(
+      selector: (state) => state.type,
+      builder: (context, type) {
+        return FinxlSegmentedControl<TransactionType>(
+          value: type,
+          options: const [
+            SegmentedOption(value: TransactionType.expense, label: 'Expense'),
+            SegmentedOption(value: TransactionType.income, label: 'Income'),
+          ],
+          onChanged: context.read<TransactionCubit>().selectType,
+        );
+      },
     );
   }
 }
@@ -212,22 +226,9 @@ class _AmountField extends StatelessWidget {
           width: 96,
           height: 4,
           decoration: BoxDecoration(
-            // color: AppTheme.primary.withValues(alpha: 0.16),
             color: AppTheme.primary,
             borderRadius: BorderRadius.circular(999),
           ),
-          // child: Align(
-          //   alignment: Alignment.centerLeft,
-          //   child: FractionallySizedBox(
-          //     widthFactor: 0.45,
-          //     child: Container(
-          //       decoration: BoxDecoration(
-          //         color: AppTheme.primary,
-          //         borderRadius: BorderRadius.circular(999),
-          //       ),
-          //     ),
-          //   ),
-          // ),
         ),
       ],
     );
@@ -235,33 +236,76 @@ class _AmountField extends StatelessWidget {
 }
 
 class _DateSelector extends StatelessWidget {
-  const _DateSelector({required this.selectedDate});
-
-  final DateTime selectedDate;
+  const _DateSelector();
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      color: AppTheme.surfaceContainerLow,
-      child: ListTile(
-        leading: const Icon(Icons.calendar_today_outlined),
-        title: const Text('Transaction date'),
-        subtitle: Text(
-          '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-        ),
-        onTap: () async {
-          final selected = await showDatePicker(
-            context: context,
-            initialDate: selectedDate,
-            firstDate: DateTime(2020),
-            lastDate: DateTime.now().add(const Duration(days: 365)),
-          );
-          if (selected != null && context.mounted) {
-            context.read<TransactionCubit>().updateDate(selected);
-          }
-        },
+    return BlocSelector<TransactionCubit, TransactionState, DateTime>(
+      selector: (state) => state.date,
+      builder: (context, selectedDate) {
+        return SectionCard(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          color: AppTheme.surfaceContainerLow,
+          child: ListTile(
+            leading: const Icon(Icons.calendar_today_outlined),
+            title: const Text('Transaction date'),
+            subtitle: Text(
+              '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+            ),
+            onTap: () async {
+              final selected = await showDatePicker(
+                context: context,
+                initialDate: selectedDate,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+              );
+              if (selected != null && context.mounted) {
+                context.read<TransactionCubit>().updateDate(selected);
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CategorySection extends StatelessWidget {
+  const _CategorySection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<
+      TransactionCubit,
+      TransactionState,
+      ({
+        TransactionFormConfig? config,
+        TransactionType type,
+        String? selectedCategoryId,
+      })
+    >(
+      selector: (state) => (
+        config: state.config,
+        type: state.type,
+        selectedCategoryId: state.selectedCategoryId,
       ),
+      builder: (context, viewState) {
+        if (viewState.config == null ||
+            viewState.type != TransactionType.expense) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _CategoryGrid(
+              config: viewState.config!,
+              selectedCategoryId: viewState.selectedCategoryId,
+            ),
+            const SizedBox(height: 40),
+          ],
+        );
+      },
     );
   }
 }
@@ -275,7 +319,7 @@ class _CategoryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final expenseCategories = config.categories
-        .where((c) => c.id != 'income')
+        .where((category) => category.id != 'income')
         .toList(growable: false);
 
     return Column(
@@ -348,6 +392,46 @@ class _CategoryGrid extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+class _PaymentMethodsSection extends StatelessWidget {
+  const _PaymentMethodsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<
+      TransactionCubit,
+      TransactionState,
+      ({
+        TransactionFormConfig? config,
+        TransactionType type,
+        PaymentMethod paymentMethod,
+      })
+    >(
+      selector: (state) => (
+        config: state.config,
+        type: state.type,
+        paymentMethod: state.paymentMethod,
+      ),
+      builder: (context, viewState) {
+        final config = viewState.config;
+        if (config == null) {
+          return const SizedBox.shrink();
+        }
+
+        final methods = viewState.type == TransactionType.income
+            ? config.paymentMethods
+                  .where((method) => method != PaymentMethod.card)
+                  .toList(growable: false)
+            : config.paymentMethods;
+
+        return _PaymentMethods(
+          methods: methods,
+          selected: viewState.paymentMethod,
+        );
+      },
     );
   }
 }

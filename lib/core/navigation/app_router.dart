@@ -13,7 +13,9 @@ import 'package:finxl/features/goals/presentation/pages/goals_page.dart';
 import 'package:finxl/features/profile/presentation/pages/profile_settings_page.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transaction_cubit.dart';
+import 'package:finxl/features/transactions/presentation/cubit/transactions_history_cubit.dart';
 import 'package:finxl/features/transactions/presentation/pages/add_transaction_page.dart';
+import 'package:finxl/features/transactions/presentation/pages/transactions_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +25,7 @@ class AppRouter {
 
   static const String profilePath = '/profile';
   static const String addTransactionPath = '/transaction/new';
+  static const String transactionsHistoryPath = '/transactions';
   static const String addGoalPath = '/goals/new';
   static const String addBudgetPath = '/budget/new';
   static const String addBillPath = '/bills/new';
@@ -109,14 +112,31 @@ class AppRouter {
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
+        path: transactionsHistoryPath,
+        pageBuilder: (context, state) => _buildPage(
+          state,
+          BlocProvider(
+            create: (_) =>
+                TransactionsHistoryCubit(context.read<TransactionRepository>()),
+            child: const TransactionsHistoryPage(),
+          ),
+        ),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
         path: addGoalPath,
-        pageBuilder: (context, state) => _buildPage(state, AddGoalPage(goalToEdit: state.extra as SavingsGoal?)),
+        pageBuilder: (context, state) => _buildPage(
+          state,
+          AddGoalPage(goalToEdit: state.extra as SavingsGoal?),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: addBudgetPath,
-        pageBuilder: (context, state) =>
-            _buildPage(state, AddBudgetPage(budgetToEdit: state.extra as BudgetCategory?)),
+        pageBuilder: (context, state) => _buildPage(
+          state,
+          AddBudgetPage(budgetToEdit: state.extra as BudgetCategory?),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
