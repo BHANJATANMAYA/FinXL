@@ -5,6 +5,7 @@ import 'package:finxl/core/common/widgets/floating_widget.dart';
 import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -232,7 +233,10 @@ class WelcomePage extends StatelessWidget {
                               color: Colors.transparent,
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(24),
-                                onTap: () => context.push(AppRouter.signUpPath),
+                                onTap: () {
+                                HapticFeedback.heavyImpact();
+                                context.push(AppRouter.signUpPath);
+                                },
                                 child: Center(
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -462,7 +466,7 @@ class WelcomePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'VALID THRU 12/28',
+                        'VALID THRU 12/30',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
