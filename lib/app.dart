@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/notifications/local_notification_service.dart';
 import 'package:finxl/core/theme/app_theme.dart';
@@ -23,6 +25,10 @@ import 'package:finxl/features/sms_detection/data/services/sms_detection_service
 import 'package:finxl/features/sms_detection/data/services/sms_parser_engine.dart';
 import 'package:finxl/features/sms_detection/data/services/sms_transaction_mapper.dart';
 import 'package:finxl/features/sms_detection/presentation/bloc/sms_detection_bloc.dart';
+import 'package:finxl/features/sync/data/repositories/sync_repository_impl.dart';
+import 'package:finxl/features/sync/data/services/sync_service.dart';
+import 'package:finxl/features/sync/domain/repositories/sync_repository.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:finxl/features/transactions/data/repositories/transaction_repository_impl.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:flutter/material.dart';
@@ -75,6 +81,12 @@ class FinXL extends StatelessWidget {
         RepositoryProvider<SmsTransactionMapper>(
           create: (_) => SmsTransactionMapper(),
         ),
+        RepositoryProvider<SyncService>(
+          create: (_) => SyncService(supabaseClient: Supabase.instance.client),
+        ),
+        RepositoryProvider<SyncRepository>(
+          create: (context) => SyncRepositoryImpl(context.read<SyncService>()),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -112,11 +124,15 @@ class FinXL extends StatelessWidget {
               transactionRepository: context.read<TransactionRepository>(),
             ),
           ),
+          BlocProvider(
+            create: (context) => SyncBloc(context.read<SyncRepository>()),
+          ),
         ],
         child: BlocListener<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthAuthenticated) {
               AppRouter.router.go(AppRouter.dashboardPath);
+              unawaited(context.read<SyncBloc>().checkRestoreAvailability());
             } else if (state is AuthUnauthenticated) {
               AppRouter.router.go(AppRouter.welcomePath);
             }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:finxl/core/models/sync_metadata.dart';
 
 enum TransactionType { income, expense }
 
@@ -66,6 +67,7 @@ class Transaction extends Equatable {
     this.sourceType = TransactionSourceType.manual,
     this.isAutoDetected = false,
     this.smsRawBody,
+    this.syncMetadata = const SyncMetadata(),
   });
 
   final int? id;
@@ -78,6 +80,7 @@ class Transaction extends Equatable {
   final TransactionSourceType sourceType;
   final bool isAutoDetected;
   final String? smsRawBody;
+  final SyncMetadata syncMetadata;
 
   Transaction copyWith({
     int? id,
@@ -90,6 +93,7 @@ class Transaction extends Equatable {
     TransactionSourceType? sourceType,
     bool? isAutoDetected,
     String? smsRawBody,
+    SyncMetadata? syncMetadata,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -102,6 +106,7 @@ class Transaction extends Equatable {
       sourceType: sourceType ?? this.sourceType,
       isAutoDetected: isAutoDetected ?? this.isAutoDetected,
       smsRawBody: smsRawBody ?? this.smsRawBody,
+      syncMetadata: syncMetadata ?? this.syncMetadata,
     );
   }
 
@@ -117,6 +122,7 @@ class Transaction extends Equatable {
       'source_type': sourceType.value,
       'is_auto_detected': isAutoDetected ? 1 : 0,
       'sms_raw_body': smsRawBody,
+      ...syncMetadata.toMap(),
     };
   }
 
@@ -134,6 +140,15 @@ class Transaction extends Equatable {
       ),
       isAutoDetected: (map['is_auto_detected'] as int?) == 1,
       smsRawBody: map['sms_raw_body'] as String?,
+      syncMetadata: SyncMetadata(
+        userId: map['user_id'] as String?,
+        createdAt: parseOptionalDate(map['created_at']),
+        updatedAt: parseOptionalDate(map['updated_at']),
+        syncStatus: SyncStatusX.fromValue(map['sync_status'] as String?),
+        deletedAt: parseOptionalDate(map['deleted_at']),
+        deviceId: map['device_id'] as String?,
+        cloudId: map['cloud_id'] as String?,
+      ),
     );
   }
 
@@ -149,5 +164,6 @@ class Transaction extends Equatable {
     sourceType,
     isAutoDetected,
     smsRawBody,
+    syncMetadata,
   ];
 }

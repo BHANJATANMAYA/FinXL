@@ -1,4 +1,5 @@
 import 'package:finxl/core/database/local_database_service.dart';
+import 'package:finxl/core/models/sync_metadata.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
 import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/features/transactions/domain/entities/transaction_form_config.dart';
@@ -23,10 +24,14 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<List<core.Transaction>> getTransactions({int? limit, int? offset}) async {
+  Future<List<core.Transaction>> getTransactions({
+    int? limit,
+    int? offset,
+  }) async {
     final db = await _databaseService.database;
     final rows = await db.query(
       LocalDatabaseService.transactionsTable,
+      where: 'deleted_at IS NULL',
       orderBy: 'date DESC',
       limit: limit,
       offset: offset,
@@ -48,7 +53,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Future<int> addTransaction(core.Transaction transaction) async {
-    final values = Map<String, Object?>.from(transaction.toMap())..remove('id');
+    final values = withLocalSyncDefaults(
+      Map<String, Object?>.from(transaction.toMap())..remove('id'),
+    );
     return _databaseService.insert(
       LocalDatabaseService.transactionsTable,
       values,
@@ -62,7 +69,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
       throw ArgumentError('Transaction id is required for update.');
     }
 
-    final values = Map<String, Object?>.from(transaction.toMap())..remove('id');
+    final values = withLocalSyncDefaults(
+      Map<String, Object?>.from(transaction.toMap())..remove('id'),
+    )..remove('created_at');
     await _databaseService.update(
       LocalDatabaseService.transactionsTable,
       values,
@@ -72,6 +81,10 @@ class TransactionRepositoryImpl implements TransactionRepository {
 
   @override
   Future<void> deleteTransaction(int id) async {
-    await _databaseService.delete(LocalDatabaseService.transactionsTable, id);
+    final now = DateTime.now().toUtc().toIso8601String();
+    await _databaseService.rawUpdate(
+      'UPDATE ${LocalDatabaseService.transactionsTable} SET sync_status = ?, deleted_at = ?, updated_at = ? WHERE id = ?',
+      [SyncStatus.deleted.value, now, now, id],
+    );
   }
 }

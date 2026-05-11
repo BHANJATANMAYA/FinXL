@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:finxl/core/models/sync_metadata.dart';
 
 class Bill extends Equatable {
   const Bill({
@@ -10,6 +11,7 @@ class Bill extends Equatable {
     required this.recurrence,
     required this.type,
     required this.isActive,
+    this.syncMetadata = const SyncMetadata(),
   });
 
   final int? id;
@@ -20,6 +22,7 @@ class Bill extends Equatable {
   final String recurrence;
   final String type;
   final bool isActive;
+  final SyncMetadata syncMetadata;
 
   Bill copyWith({
     int? id,
@@ -30,6 +33,7 @@ class Bill extends Equatable {
     String? recurrence,
     String? type,
     bool? isActive,
+    SyncMetadata? syncMetadata,
   }) {
     return Bill(
       id: id ?? this.id,
@@ -40,6 +44,7 @@ class Bill extends Equatable {
       recurrence: recurrence ?? this.recurrence,
       type: type ?? this.type,
       isActive: isActive ?? this.isActive,
+      syncMetadata: syncMetadata ?? this.syncMetadata,
     );
   }
 
@@ -53,6 +58,7 @@ class Bill extends Equatable {
       'recurrence': recurrence,
       'type': type,
       'is_active': isActive ? 1 : 0,
+      ...syncMetadata.toMap(),
     };
   }
 
@@ -66,6 +72,15 @@ class Bill extends Equatable {
       recurrence: map['recurrence'] as String,
       type: map['type'] as String? ?? 'bill',
       isActive: (map['is_active'] as int? ?? 1) == 1,
+      syncMetadata: SyncMetadata(
+        userId: map['user_id'] as String?,
+        createdAt: parseOptionalDate(map['created_at']),
+        updatedAt: parseOptionalDate(map['updated_at']),
+        syncStatus: SyncStatusX.fromValue(map['sync_status'] as String?),
+        deletedAt: parseOptionalDate(map['deleted_at']),
+        deviceId: map['device_id'] as String?,
+        cloudId: map['cloud_id'] as String?,
+      ),
     );
   }
 
@@ -79,5 +94,6 @@ class Bill extends Equatable {
     recurrence,
     type,
     isActive,
+    syncMetadata,
   ];
 }

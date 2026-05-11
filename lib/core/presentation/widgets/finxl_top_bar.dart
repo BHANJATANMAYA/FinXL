@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
-  const FinxlTopBar({this.onProfileTap, this.onNotificationTap, super.key});
+  const FinxlTopBar({
+    this.onProfileTap,
+    this.onNotificationTap,
+    this.syncIndicator,
+    super.key,
+  });
 
   final VoidCallback? onProfileTap;
   final VoidCallback? onNotificationTap;
+  final Widget? syncIndicator;
 
   @override
   Size get preferredSize => const Size.fromHeight(84);
@@ -51,16 +57,52 @@ class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
             ),
-            IconButton(
-              onPressed: onNotificationTap,
-              icon: const Icon(
-                Icons.notifications_outlined,
-                // Icons.menu_rounded,
-                color: AppTheme.onSurfaceVariant,
-              ),
+            Row(
+              children: [
+                if (syncIndicator != null) ...[
+                  syncIndicator!,
+                  const SizedBox(width: 4),
+                ],
+                IconButton(
+                  onPressed: onNotificationTap,
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class FinxlSyncIndicator extends StatelessWidget {
+  const FinxlSyncIndicator({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    super.key,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 18, color: color),
       ),
     );
   }

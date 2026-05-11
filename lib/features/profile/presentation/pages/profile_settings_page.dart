@@ -12,6 +12,7 @@ import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart
 import 'package:finxl/features/goals/presentation/cubit/goals_cubit.dart';
 import 'package:finxl/features/sms_detection/presentation/bloc/sms_detection_bloc.dart';
 import 'package:finxl/features/sms_detection/presentation/pages/sms_transaction_review_screen.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -106,6 +107,8 @@ class ProfileSettingsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     const _SmartSmsDetectionTile(),
+                    const SizedBox(height: 8),
+                    const _CloudSyncTile(),
                     const SizedBox(height: 8),
                     _ActionTile(
                       icon: Icons.notifications_outlined,
@@ -223,6 +226,47 @@ class ProfileSettingsPage extends StatelessWidget {
     if (result == true && context.mounted) {
       context.read<AuthCubit>().signOut();
     }
+  }
+}
+
+class _CloudSyncTile extends StatelessWidget {
+  const _CloudSyncTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<SyncBloc, SyncState>(
+      listenWhen: (previous, current) =>
+          previous.errorMessage != current.errorMessage &&
+          current.errorMessage != null,
+      listener: (context, state) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+      },
+      builder: (context, state) {
+        final isSyncing = state.status == SyncViewStatus.syncing;
+        final icon = switch (state.status) {
+          SyncViewStatus.synced => Icons.cloud_done_outlined,
+          SyncViewStatus.failed => Icons.cloud_off_outlined,
+          SyncViewStatus.restoreAvailable => Icons.cloud_download_outlined,
+          SyncViewStatus.syncing => Icons.sync,
+          SyncViewStatus.idle => Icons.cloud_queue_outlined,
+        };
+        final subtitle = switch (state.status) {
+          SyncViewStatus.synced => 'Backup is current.',
+          SyncViewStatus.failed => 'Offline or failed. FinXL will retry.',
+          SyncViewStatus.restoreAvailable => 'Previous cloud backup found.',
+          SyncViewStatus.syncing => 'Syncing local changes in the background.',
+          SyncViewStatus.idle => 'Local-first backup to Supabase.',
+        };
+        return _ActionTile(
+          icon: icon,
+          title: isSyncing ? 'Syncing...' : 'Back up to cloud',
+          subtitle: subtitle,
+          onTap: isSyncing ? () {} : () => context.read<SyncBloc>().syncNow(),
+        );
+      },
+    );
   }
 }
 

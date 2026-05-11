@@ -1,5 +1,6 @@
 import 'package:finxl/core/database/local_database_service.dart';
 import 'package:finxl/core/models/budget.dart';
+import 'package:finxl/core/models/sync_metadata.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
 import 'package:finxl/core/utils/budget_spending.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
@@ -89,10 +90,12 @@ class BudgetRepositoryImpl implements BudgetRepository {
   Future<List<Budget>> getBudgets() async {
     final budgetRows = await _databaseService.queryAll(
       LocalDatabaseService.budgetsTable,
+      where: 'deleted_at IS NULL',
       orderBy: 'category_name COLLATE NOCASE ASC',
     );
     final transactionRows = await _databaseService.queryAll(
       LocalDatabaseService.transactionsTable,
+      where: 'deleted_at IS NULL',
     );
     final budgets = budgetRows.map(Budget.fromMap).toList(growable: false);
     final transactions = transactionRows
@@ -113,9 +116,11 @@ class BudgetRepositoryImpl implements BudgetRepository {
 
   @override
   Future<int> addBudget(Budget budget) async {
-    final values = Map<String, Object?>.from(budget.toMap())
-      ..remove('id')
-      ..['spent_amount'] = 0;
+    final values = withLocalSyncDefaults(
+      Map<String, Object?>.from(budget.toMap())
+        ..remove('id')
+        ..['spent_amount'] = 0,
+    );
     return _databaseService.insert(LocalDatabaseService.budgetsTable, values);
   }
 
@@ -126,9 +131,11 @@ class BudgetRepositoryImpl implements BudgetRepository {
       throw ArgumentError('Budget id is required for update.');
     }
 
-    final values = Map<String, Object?>.from(budget.toMap())
-      ..remove('id')
-      ..remove('spent_amount');
+    final values = withLocalSyncDefaults(
+      Map<String, Object?>.from(budget.toMap())
+        ..remove('id')
+        ..remove('spent_amount'),
+    )..remove('created_at');
     await _databaseService.update(
       LocalDatabaseService.budgetsTable,
       values,
@@ -138,6 +145,10 @@ class BudgetRepositoryImpl implements BudgetRepository {
 
   @override
   Future<void> deleteBudget(int id) async {
-    await _databaseService.delete(LocalDatabaseService.budgetsTable, id);
+    final now = DateTime.now().toUtc().toIso8601String();
+    await _databaseService.rawUpdate(
+      'UPDATE ${LocalDatabaseService.budgetsTable} SET sync_status = ?, deleted_at = ?, updated_at = ? WHERE id = ?',
+      [SyncStatus.deleted.value, now, now, id],
+    );
   }
 }

@@ -8,12 +8,14 @@ class LocalDatabaseService {
   static final LocalDatabaseService instance = LocalDatabaseService._();
 
   static const String databaseName = 'finxl.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   static const String transactionsTable = 'transactions';
   static const String goalsTable = 'goals';
   static const String budgetsTable = 'budgets';
   static const String billsTable = 'bills';
+  static const String userPreferencesTable = 'user_preferences';
+  static const String syncMetaTable = 'sync_meta';
 
   Database? _database;
 
@@ -50,7 +52,14 @@ class LocalDatabaseService {
         category_id INTEGER NOT NULL,
         source_type TEXT NOT NULL DEFAULT 'manual',
         is_auto_detected INTEGER NOT NULL DEFAULT 0,
-        sms_raw_body TEXT
+        sms_raw_body TEXT,
+        user_id TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        deleted_at TEXT,
+        device_id TEXT,
+        cloud_id TEXT
       );
     ''');
 
@@ -62,7 +71,14 @@ class LocalDatabaseService {
         current_amount REAL NOT NULL DEFAULT 0,
         deadline TEXT NOT NULL,
         color TEXT,
-        icon TEXT
+        icon TEXT,
+        user_id TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        deleted_at TEXT,
+        device_id TEXT,
+        cloud_id TEXT
       );
     ''');
 
@@ -71,7 +87,14 @@ class LocalDatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category_name TEXT NOT NULL,
         limit_amount REAL NOT NULL,
-        spent_amount REAL NOT NULL DEFAULT 0
+        spent_amount REAL NOT NULL DEFAULT 0,
+        user_id TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        deleted_at TEXT,
+        device_id TEXT,
+        cloud_id TEXT
       );
     ''');
 
@@ -84,7 +107,37 @@ class LocalDatabaseService {
         is_paid INTEGER NOT NULL DEFAULT 0,
         recurrence TEXT NOT NULL,
         type TEXT NOT NULL DEFAULT 'bill',
-        is_active INTEGER NOT NULL DEFAULT 1
+        is_active INTEGER NOT NULL DEFAULT 1,
+        user_id TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        deleted_at TEXT,
+        device_id TEXT,
+        cloud_id TEXT
+      );
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $userPreferencesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        smart_sms_detection_enabled INTEGER NOT NULL DEFAULT 0,
+        notifications_enabled INTEGER NOT NULL DEFAULT 0,
+        currency_code TEXT NOT NULL DEFAULT 'INR',
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        deleted_at TEXT,
+        device_id TEXT,
+        cloud_id TEXT
+      );
+    ''');
+
+    await db.execute('''
+      CREATE TABLE $syncMetaTable (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       );
     ''');
   }
@@ -126,6 +179,34 @@ class LocalDatabaseService {
       );
     }
 
+    if (oldVersion < 4) {
+      await _addSyncColumns(db, transactionsTable);
+      await _addSyncColumns(db, goalsTable);
+      await _addSyncColumns(db, budgetsTable);
+      await _addSyncColumns(db, billsTable);
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $userPreferencesTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT,
+          smart_sms_detection_enabled INTEGER NOT NULL DEFAULT 0,
+          notifications_enabled INTEGER NOT NULL DEFAULT 0,
+          currency_code TEXT NOT NULL DEFAULT 'INR',
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          sync_status TEXT NOT NULL DEFAULT 'pending',
+          deleted_at TEXT,
+          device_id TEXT,
+          cloud_id TEXT
+        );
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $syncMetaTable (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        );
+      ''');
+    }
+
     if (oldVersion == newVersion) {
       return;
     }
@@ -142,6 +223,69 @@ class LocalDatabaseService {
     if (!exists) {
       await db.execute(statement);
     }
+  }
+
+  Future<void> _addSyncColumns(Database db, String table) async {
+    await _addColumnIfMissing(
+      db,
+      table,
+      'user_id',
+      'ALTER TABLE $table ADD COLUMN user_id TEXT',
+    );
+
+    // SQLite does NOT allow non-constant defaults (like CURRENT_TIMESTAMP)
+    // in ALTER TABLE ADD COLUMN. Add as nullable, then backfill.
+    await _addColumnIfMissing(
+      db,
+      table,
+      'created_at',
+      'ALTER TABLE $table ADD COLUMN created_at TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table,
+      'updated_at',
+      'ALTER TABLE $table ADD COLUMN updated_at TEXT',
+    );
+
+    // Backfill NULL timestamps with current ISO time
+    await db.execute(
+      "UPDATE $table SET created_at = datetime('now') WHERE created_at IS NULL",
+    );
+    await db.execute(
+      "UPDATE $table SET updated_at = datetime('now') WHERE updated_at IS NULL",
+    );
+
+    await _addColumnIfMissing(
+      db,
+      table,
+      'sync_status',
+      "ALTER TABLE $table ADD COLUMN sync_status TEXT DEFAULT 'pending'",
+    );
+
+    // Backfill NULL sync_status
+    await db.execute(
+      "UPDATE $table SET sync_status = 'pending' WHERE sync_status IS NULL",
+    );
+
+    await _addColumnIfMissing(
+      db,
+      table,
+      'deleted_at',
+      'ALTER TABLE $table ADD COLUMN deleted_at TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table,
+      'device_id',
+      'ALTER TABLE $table ADD COLUMN device_id TEXT',
+    );
+    await _addColumnIfMissing(
+      db,
+      table,
+      'cloud_id',
+      'ALTER TABLE $table ADD COLUMN cloud_id TEXT',
+    );
   }
 
   Future<int> insert(

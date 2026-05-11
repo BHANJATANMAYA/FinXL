@@ -150,7 +150,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
 
   Future<List<core.Transaction>> _getTransactions() async {
     final db = await _databaseService.database;
-    final rows = await db.query(LocalDatabaseService.transactionsTable);
+    final rows = await db.query(
+      LocalDatabaseService.transactionsTable,
+      where: 'deleted_at IS NULL',
+    );
     return rows.map(core.Transaction.fromMap).toList(growable: false);
   }
 
@@ -159,7 +162,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
     DateTime now,
   ) async {
     final db = await _databaseService.database;
-    final rows = await db.query(LocalDatabaseService.budgetsTable);
+    final rows = await db.query(
+      LocalDatabaseService.budgetsTable,
+      where: 'deleted_at IS NULL',
+    );
     final budgets = rows.map(Budget.fromMap).toList(growable: false);
     return BudgetSpending.applyCurrentMonthSpend(
       budgets,
@@ -170,7 +176,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
 
   Future<List<Goal>> _getGoals() async {
     final db = await _databaseService.database;
-    final rows = await db.query(LocalDatabaseService.goalsTable);
+    final rows = await db.query(
+      LocalDatabaseService.goalsTable,
+      where: 'deleted_at IS NULL',
+    );
     return rows.map(Goal.fromMap).toList(growable: false);
   }
 
@@ -178,7 +187,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
     final db = await _databaseService.database;
     final rows = await db.query(
       LocalDatabaseService.billsTable,
-      where: 'is_active = ? AND is_paid = ?',
+      where: 'is_active = ? AND is_paid = ? AND deleted_at IS NULL',
       whereArgs: [1, 0],
     );
     return rows.map(Bill.fromMap).toList(growable: false);

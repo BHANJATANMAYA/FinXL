@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:finxl/core/models/sync_metadata.dart';
 
 class Goal extends Equatable {
   const Goal({
@@ -9,6 +10,7 @@ class Goal extends Equatable {
     required this.deadline,
     this.color,
     this.icon,
+    this.syncMetadata = const SyncMetadata(),
   });
 
   final int? id;
@@ -18,6 +20,7 @@ class Goal extends Equatable {
   final DateTime deadline;
   final String? color;
   final String? icon;
+  final SyncMetadata syncMetadata;
 
   Goal copyWith({
     int? id,
@@ -27,6 +30,7 @@ class Goal extends Equatable {
     DateTime? deadline,
     String? color,
     String? icon,
+    SyncMetadata? syncMetadata,
   }) {
     return Goal(
       id: id ?? this.id,
@@ -36,6 +40,7 @@ class Goal extends Equatable {
       deadline: deadline ?? this.deadline,
       color: color ?? this.color,
       icon: icon ?? this.icon,
+      syncMetadata: syncMetadata ?? this.syncMetadata,
     );
   }
 
@@ -48,6 +53,7 @@ class Goal extends Equatable {
       'deadline': deadline.toIso8601String(),
       'color': color,
       'icon': icon,
+      ...syncMetadata.toMap(),
     };
   }
 
@@ -60,6 +66,15 @@ class Goal extends Equatable {
       deadline: DateTime.parse(map['deadline'] as String),
       color: map['color'] as String?,
       icon: map['icon'] as String?,
+      syncMetadata: SyncMetadata(
+        userId: map['user_id'] as String?,
+        createdAt: parseOptionalDate(map['created_at']),
+        updatedAt: parseOptionalDate(map['updated_at']),
+        syncStatus: SyncStatusX.fromValue(map['sync_status'] as String?),
+        deletedAt: parseOptionalDate(map['deleted_at']),
+        deviceId: map['device_id'] as String?,
+        cloudId: map['cloud_id'] as String?,
+      ),
     );
   }
 
@@ -72,5 +87,6 @@ class Goal extends Equatable {
     deadline,
     color,
     icon,
+    syncMetadata,
   ];
 }

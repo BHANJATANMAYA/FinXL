@@ -1,5 +1,6 @@
 import 'package:finxl/core/database/local_database_service.dart';
 import 'package:finxl/core/models/goal.dart';
+import 'package:finxl/core/models/sync_metadata.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/domain/repositories/goals_repository.dart';
@@ -85,6 +86,7 @@ class GoalsRepositoryImpl implements GoalsRepository {
     final db = await _databaseService.database;
     final rows = await db.query(
       LocalDatabaseService.goalsTable,
+      where: 'deleted_at IS NULL',
       orderBy: 'deadline ASC',
     );
 
@@ -103,7 +105,9 @@ class GoalsRepositoryImpl implements GoalsRepository {
 
   @override
   Future<int> addGoal(Goal goal) async {
-    final values = Map<String, Object?>.from(goal.toMap())..remove('id');
+    final values = withLocalSyncDefaults(
+      Map<String, Object?>.from(goal.toMap())..remove('id'),
+    );
     return _databaseService.insert(LocalDatabaseService.goalsTable, values);
   }
 
@@ -114,13 +118,19 @@ class GoalsRepositoryImpl implements GoalsRepository {
       throw ArgumentError('Goal id is required for update.');
     }
 
-    final values = Map<String, Object?>.from(goal.toMap())..remove('id');
+    final values = withLocalSyncDefaults(
+      Map<String, Object?>.from(goal.toMap())..remove('id'),
+    )..remove('created_at');
     await _databaseService.update(LocalDatabaseService.goalsTable, values, id);
   }
 
   @override
   Future<void> deleteGoal(int id) async {
-    await _databaseService.delete(LocalDatabaseService.goalsTable, id);
+    final now = DateTime.now().toUtc().toIso8601String();
+    await _databaseService.rawUpdate(
+      'UPDATE ${LocalDatabaseService.goalsTable} SET sync_status = ?, deleted_at = ?, updated_at = ? WHERE id = ?',
+      [SyncStatus.deleted.value, now, now, id],
+    );
   }
 }
 
