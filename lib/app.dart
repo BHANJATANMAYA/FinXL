@@ -19,6 +19,10 @@ import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart
 import 'package:finxl/features/goals/data/repositories/goals_repository_impl.dart';
 import 'package:finxl/features/goals/domain/repositories/goals_repository.dart';
 import 'package:finxl/features/goals/presentation/cubit/goals_cubit.dart';
+import 'package:finxl/features/sms_detection/data/services/sms_detection_service.dart';
+import 'package:finxl/features/sms_detection/data/services/sms_parser_engine.dart';
+import 'package:finxl/features/sms_detection/data/services/sms_transaction_mapper.dart';
+import 'package:finxl/features/sms_detection/presentation/bloc/sms_detection_bloc.dart';
 import 'package:finxl/features/transactions/data/repositories/transaction_repository_impl.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +67,14 @@ class FinXL extends StatelessWidget {
         RepositoryProvider<LocalNotificationService>.value(
           value: notificationService,
         ),
+        RepositoryProvider<SmsDetectionService>(
+          create: (_) => SmsDetectionService(),
+          dispose: (service) => service.dispose(),
+        ),
+        RepositoryProvider<SmsParserEngine>(create: (_) => SmsParserEngine()),
+        RepositoryProvider<SmsTransactionMapper>(
+          create: (_) => SmsTransactionMapper(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -91,6 +103,14 @@ class FinXL extends StatelessWidget {
               context.read<BillsRepository>(),
               context.read<LocalNotificationService>(),
             )..load(),
+          ),
+          BlocProvider(
+            create: (context) => SmsDetectionBloc(
+              detectionService: context.read<SmsDetectionService>(),
+              parserEngine: context.read<SmsParserEngine>(),
+              transactionMapper: context.read<SmsTransactionMapper>(),
+              transactionRepository: context.read<TransactionRepository>(),
+            ),
           ),
         ],
         child: BlocListener<AuthCubit, AuthState>(

@@ -15,6 +15,7 @@ import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/pages/add_goal_page.dart';
 import 'package:finxl/features/goals/presentation/pages/goals_page.dart';
 import 'package:finxl/features/profile/presentation/pages/profile_settings_page.dart';
+import 'package:finxl/features/sms_detection/presentation/pages/sms_transaction_review_screen.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transaction_cubit.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transactions_history_cubit.dart';
@@ -31,7 +32,7 @@ class AppRouter {
   static const String signInPath = '/sign-in';
   static const String signUpPath = '/sign-up';
   static const String forgotPasswordPath = '/forgot-password';
-  
+
   static const String profilePath = '/profile';
   static const String dashboardPath = '/dashboard';
   static const String addTransactionPath = '/transaction/new';
@@ -39,6 +40,7 @@ class AppRouter {
   static const String addGoalPath = '/goals/new';
   static const String addBudgetPath = '/budget/new';
   static const String addBillPath = '/bills/new';
+  static const String smsReviewPath = '/sms/review';
 
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _dashboardNavigatorKey = GlobalKey<NavigatorState>();
@@ -60,14 +62,12 @@ class AppRouter {
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: signInPath,
-        pageBuilder: (context, state) =>
-            _buildPage(state, const SignInPage()),
+        pageBuilder: (context, state) => _buildPage(state, const SignInPage()),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
         path: signUpPath,
-        pageBuilder: (context, state) =>
-            _buildPage(state, const SignUpPage()),
+        pageBuilder: (context, state) => _buildPage(state, const SignUpPage()),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
@@ -182,6 +182,12 @@ class AppRouter {
         path: profilePath,
         pageBuilder: (context, state) =>
             _buildPage(state, const ProfileSettingsPage()),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: smsReviewPath,
+        pageBuilder: (context, state) =>
+            _buildPage(state, const SmsTransactionReviewScreen()),
       ),
     ],
   );

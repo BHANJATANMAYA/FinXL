@@ -14,6 +14,7 @@ import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
+import 'package:finxl/features/ai_categorization/domain/entities/insight_model.dart';
 import 'package:finxl/features/dashboard/domain/entities/dashboard_snapshot.dart';
 import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:finxl/features/transactions/presentation/widgets/transaction_list_card.dart';
@@ -43,6 +44,9 @@ class DashboardPage extends StatelessWidget {
         }
 
         final snapshot = state.snapshot!;
+        final visibleInsights = snapshot.smartInsights
+            .where((item) => !state.dismissedInsightIds.contains(item.id))
+            .toList(growable: false);
         return RefreshIndicator(
           onRefresh: () => context.read<DashboardCubit>().refresh(),
           child: FinxlPageBody(
@@ -57,6 +61,10 @@ class DashboardPage extends StatelessWidget {
                 _BalanceSection(snapshot: snapshot),
                 const SizedBox(height: 32),
                 _MonthlyFlowCard(snapshot: snapshot),
+                if (visibleInsights.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _SmartInsightsSection(insights: visibleInsights),
+                ],
                 const SizedBox(height: 16),
                 if (snapshot.activeGoal != null) ...[
                   _ActiveGoalCard(goal: snapshot.activeGoal!),
@@ -91,6 +99,141 @@ class DashboardPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _SmartInsightsSection extends StatelessWidget {
+  const _SmartInsightsSection({required this.insights});
+
+  final List<InsightModel> insights;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'SMART INSIGHTS',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+            const Spacer(),
+            const Icon(Icons.auto_awesome, color: AppTheme.primary, size: 18),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 142,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: insights.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final insight = insights[index];
+              return SizedBox(
+                width: 300,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 260 + index * 80),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(18 * (1 - value), 0),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Dismissible(
+                    key: ValueKey(insight.id),
+                    direction: DismissDirection.up,
+                    onDismissed: (_) => context
+                        .read<DashboardCubit>()
+                        .dismissInsight(insight.id),
+                    child: _InsightCard(insight: insight),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  const _InsightCard({required this.insight});
+
+  final InsightModel insight;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = AppTheme.accentColor(insight.accent);
+    return SectionCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  resolveIcon(insight.iconKey),
+                  color: accent,
+                  size: 20,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${(insight.confidence * 100).round()}%',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: accent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            insight.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.manrope(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Text(
+              insight.message,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                height: 1.35,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

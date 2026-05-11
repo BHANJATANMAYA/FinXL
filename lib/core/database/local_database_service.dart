@@ -8,7 +8,7 @@ class LocalDatabaseService {
   static final LocalDatabaseService instance = LocalDatabaseService._();
 
   static const String databaseName = 'finxl.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   static const String transactionsTable = 'transactions';
   static const String goalsTable = 'goals';
@@ -47,7 +47,10 @@ class LocalDatabaseService {
         description TEXT NOT NULL,
         type TEXT NOT NULL,
         payment_method TEXT NOT NULL,
-        category_id INTEGER NOT NULL
+        category_id INTEGER NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'manual',
+        is_auto_detected INTEGER NOT NULL DEFAULT 0,
+        sms_raw_body TEXT
       );
     ''');
 
@@ -99,6 +102,27 @@ class LocalDatabaseService {
         billsTable,
         'is_active',
         'ALTER TABLE $billsTable ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+
+    if (oldVersion < 3) {
+      await _addColumnIfMissing(
+        db,
+        transactionsTable,
+        'source_type',
+        "ALTER TABLE $transactionsTable ADD COLUMN source_type TEXT NOT NULL DEFAULT 'manual'",
+      );
+      await _addColumnIfMissing(
+        db,
+        transactionsTable,
+        'is_auto_detected',
+        'ALTER TABLE $transactionsTable ADD COLUMN is_auto_detected INTEGER NOT NULL DEFAULT 0',
+      );
+      await _addColumnIfMissing(
+        db,
+        transactionsTable,
+        'sms_raw_body',
+        'ALTER TABLE $transactionsTable ADD COLUMN sms_raw_body TEXT',
       );
     }
 

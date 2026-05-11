@@ -3,6 +3,7 @@ import 'package:finxl/core/models/bill.dart';
 import 'package:finxl/core/models/budget.dart';
 import 'package:finxl/core/models/goal.dart';
 import 'package:finxl/core/models/transaction.dart';
+import 'package:finxl/features/ai_categorization/domain/entities/insight_model.dart';
 
 class DashboardSnapshot extends Equatable {
   const DashboardSnapshot({
@@ -18,6 +19,7 @@ class DashboardSnapshot extends Equatable {
     required this.recentTransactions,
     required this.upcomingBills,
     required this.budgetAlerts,
+    required this.smartInsights,
     this.activeGoal,
   });
 
@@ -33,6 +35,7 @@ class DashboardSnapshot extends Equatable {
   final List<Transaction> recentTransactions;
   final List<Bill> upcomingBills;
   final List<Budget> budgetAlerts;
+  final List<InsightModel> smartInsights;
   final Goal? activeGoal;
 
   @override
@@ -49,6 +52,7 @@ class DashboardSnapshot extends Equatable {
     recentTransactions,
     upcomingBills,
     budgetAlerts,
+    smartInsights,
     activeGoal,
   ];
 }

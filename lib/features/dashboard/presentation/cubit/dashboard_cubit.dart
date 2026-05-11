@@ -34,31 +34,48 @@ class DashboardCubit extends Cubit<DashboardState> {
   }
 
   Future<void> refresh() => load(showLoading: false);
+
+  void dismissInsight(String insightId) {
+    emit(
+      state.copyWith(
+        dismissedInsightIds: {...state.dismissedInsightIds, insightId},
+      ),
+    );
+  }
 }
 
 class DashboardState extends Equatable {
   const DashboardState({
     this.status = LoadStatus.initial,
     this.snapshot,
+    this.dismissedInsightIds = const {},
     this.errorMessage,
   });
 
   final LoadStatus status;
   final DashboardSnapshot? snapshot;
+  final Set<String> dismissedInsightIds;
   final String? errorMessage;
 
   DashboardState copyWith({
     LoadStatus? status,
     DashboardSnapshot? snapshot,
+    Set<String>? dismissedInsightIds,
     String? errorMessage,
   }) {
     return DashboardState(
       status: status ?? this.status,
       snapshot: snapshot ?? this.snapshot,
+      dismissedInsightIds: dismissedInsightIds ?? this.dismissedInsightIds,
       errorMessage: errorMessage,
     );
   }
 
   @override
-  List<Object?> get props => [status, snapshot, errorMessage];
+  List<Object?> get props => [
+    status,
+    snapshot,
+    dismissedInsightIds,
+    errorMessage,
+  ];
 }

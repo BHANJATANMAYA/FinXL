@@ -7,14 +7,19 @@ import 'package:finxl/core/models/goal.dart';
 import 'package:finxl/core/models/transaction.dart' as core;
 import 'package:finxl/core/utils/budget_spending.dart';
 import 'package:finxl/core/utils/finance_lookups.dart';
+import 'package:finxl/features/ai_categorization/data/services/transaction_insight_engine.dart';
 import 'package:finxl/features/dashboard/domain/entities/dashboard_snapshot.dart';
 import 'package:finxl/features/dashboard/domain/repositories/dashboard_repository.dart';
 
 class DashboardRepositoryImpl implements DashboardRepository {
-  DashboardRepositoryImpl({LocalDatabaseService? databaseService})
-    : _databaseService = databaseService ?? LocalDatabaseService.instance;
+  DashboardRepositoryImpl({
+    LocalDatabaseService? databaseService,
+    TransactionInsightEngine? insightEngine,
+  }) : _databaseService = databaseService ?? LocalDatabaseService.instance,
+       _insightEngine = insightEngine ?? TransactionInsightEngine();
 
   final LocalDatabaseService _databaseService;
+  final TransactionInsightEngine _insightEngine;
 
   @override
   Future<DashboardSnapshot> fetchSnapshot() async {
@@ -76,23 +81,27 @@ class DashboardRepositoryImpl implements DashboardRepository {
 
     final sortedTransactions = List<core.Transaction>.from(transactions)
       ..sort((a, b) => b.date.compareTo(a.date));
-    final recentTransactions =
-        sortedTransactions.take(5).toList(growable: false);
+    final recentTransactions = sortedTransactions
+        .take(5)
+        .toList(growable: false);
 
     final sortedBills = List<Bill>.from(bills)
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
     final recentUpcomingBills = sortedBills.take(3).toList(growable: false);
 
-    final budgetAlerts =
-        budgets
-            .where(
-              (b) => b.limitAmount > 0 && b.spentAmount >= b.limitAmount * 0.9,
-            )
-            .toList(growable: false);
+    final budgetAlerts = budgets
+        .where((b) => b.limitAmount > 0 && b.spentAmount >= b.limitAmount * 0.9)
+        .toList(growable: false);
+    final smartInsights = _insightEngine.generateInsights(
+      transactions,
+      budgets,
+      now: now,
+    );
 
     Goal? activeGoal;
-    final activeGoals =
-        goals.where((g) => g.currentAmount < g.targetAmount).toList();
+    final activeGoals = goals
+        .where((g) => g.currentAmount < g.targetAmount)
+        .toList();
     if (activeGoals.isNotEmpty) {
       activeGoals.sort((a, b) {
         final aRatio = FinanceLookups.safeRatio(
@@ -134,6 +143,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
       recentTransactions: recentTransactions,
       upcomingBills: recentUpcomingBills,
       budgetAlerts: budgetAlerts,
+      smartInsights: smartInsights,
       activeGoal: activeGoal,
     );
   }

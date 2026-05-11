@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 
 enum TransactionType { income, expense }
 
+enum TransactionSourceType { manual, sms, aiGenerated }
+
 extension TransactionTypeX on TransactionType {
   String get value {
     switch (this) {
@@ -24,6 +26,34 @@ extension TransactionTypeX on TransactionType {
   }
 }
 
+extension TransactionSourceTypeX on TransactionSourceType {
+  String get value {
+    switch (this) {
+      case TransactionSourceType.manual:
+        return 'manual';
+      case TransactionSourceType.sms:
+        return 'sms';
+      case TransactionSourceType.aiGenerated:
+        return 'ai_generated';
+    }
+  }
+
+  static TransactionSourceType fromValue(String? value) {
+    switch (value) {
+      case 'sms':
+        return TransactionSourceType.sms;
+      case 'ai_generated':
+        return TransactionSourceType.aiGenerated;
+      case 'manual':
+      case null:
+      case '':
+        return TransactionSourceType.manual;
+      default:
+        return TransactionSourceType.manual;
+    }
+  }
+}
+
 class Transaction extends Equatable {
   const Transaction({
     this.id,
@@ -33,6 +63,9 @@ class Transaction extends Equatable {
     required this.type,
     required this.paymentMethod,
     required this.categoryId,
+    this.sourceType = TransactionSourceType.manual,
+    this.isAutoDetected = false,
+    this.smsRawBody,
   });
 
   final int? id;
@@ -42,6 +75,9 @@ class Transaction extends Equatable {
   final TransactionType type;
   final String paymentMethod;
   final int categoryId;
+  final TransactionSourceType sourceType;
+  final bool isAutoDetected;
+  final String? smsRawBody;
 
   Transaction copyWith({
     int? id,
@@ -51,6 +87,9 @@ class Transaction extends Equatable {
     TransactionType? type,
     String? paymentMethod,
     int? categoryId,
+    TransactionSourceType? sourceType,
+    bool? isAutoDetected,
+    String? smsRawBody,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -60,6 +99,9 @@ class Transaction extends Equatable {
       type: type ?? this.type,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       categoryId: categoryId ?? this.categoryId,
+      sourceType: sourceType ?? this.sourceType,
+      isAutoDetected: isAutoDetected ?? this.isAutoDetected,
+      smsRawBody: smsRawBody ?? this.smsRawBody,
     );
   }
 
@@ -72,6 +114,9 @@ class Transaction extends Equatable {
       'type': type.value,
       'payment_method': paymentMethod,
       'category_id': categoryId,
+      'source_type': sourceType.value,
+      'is_auto_detected': isAutoDetected ? 1 : 0,
+      'sms_raw_body': smsRawBody,
     };
   }
 
@@ -84,6 +129,11 @@ class Transaction extends Equatable {
       type: TransactionTypeX.fromValue(map['type'] as String),
       paymentMethod: map['payment_method'] as String,
       categoryId: map['category_id'] as int,
+      sourceType: TransactionSourceTypeX.fromValue(
+        map['source_type'] as String?,
+      ),
+      isAutoDetected: (map['is_auto_detected'] as int?) == 1,
+      smsRawBody: map['sms_raw_body'] as String?,
     );
   }
 
@@ -96,5 +146,8 @@ class Transaction extends Equatable {
     type,
     paymentMethod,
     categoryId,
+    sourceType,
+    isAutoDetected,
+    smsRawBody,
   ];
 }
