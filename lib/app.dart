@@ -28,6 +28,12 @@ import 'package:finxl/features/sms_detection/presentation/bloc/sms_detection_blo
 import 'package:finxl/features/sync/data/repositories/sync_repository_impl.dart';
 import 'package:finxl/features/sync/data/services/sync_service.dart';
 import 'package:finxl/features/sync/domain/repositories/sync_repository.dart';
+import 'package:finxl/features/subscriptions/data/repositories/subscription_repository_impl.dart';
+import 'package:finxl/features/subscriptions/data/services/subscription_detection_service.dart';
+import 'package:finxl/features/subscriptions/domain/repositories/subscription_repository.dart';
+import 'package:finxl/features/finxl_score/data/services/finxl_score_service.dart';
+import 'package:finxl/features/finxl_score/presentation/cubit/finxl_score_cubit.dart';
+import 'package:finxl/features/subscriptions/presentation/cubit/subscription_bloc.dart';
 import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:finxl/features/transactions/data/repositories/transaction_repository_impl.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
@@ -69,6 +75,15 @@ class FinXL extends StatelessWidget {
         ),
         RepositoryProvider<TransactionRepository>(
           create: (_) => TransactionRepositoryImpl(),
+        ),
+        RepositoryProvider<SubscriptionRepository>(
+          create: (_) => SubscriptionRepositoryImpl(),
+        ),
+        RepositoryProvider<SubscriptionDetectionService>(
+          create: (_) => SubscriptionDetectionService(),
+        ),
+        RepositoryProvider<FinXLScoreService>(
+          create: (_) => FinXLScoreService(),
         ),
         RepositoryProvider<LocalNotificationService>.value(
           value: notificationService,
@@ -126,6 +141,24 @@ class FinXL extends StatelessWidget {
           ),
           BlocProvider(
             create: (context) => SyncBloc(context.read<SyncRepository>()),
+          ),
+          BlocProvider(
+            create: (context) => SubscriptionBloc(
+              subscriptionRepository: context.read<SubscriptionRepository>(),
+              transactionRepository: context.read<TransactionRepository>(),
+              detectionService: context.read<SubscriptionDetectionService>(),
+            )
+              ..add(LoadSubscriptions())
+              ..add(DetectSubscriptions()),
+          ),
+          BlocProvider(
+            create: (context) => FinXLScoreCubit(
+              scoreService: context.read<FinXLScoreService>(),
+              transactionRepository: context.read<TransactionRepository>(),
+              budgetRepository: context.read<BudgetRepository>(),
+              goalsRepository: context.read<GoalsRepository>(),
+              subscriptionRepository: context.read<SubscriptionRepository>(),
+            )..calculateScore(),
           ),
         ],
         child: BlocListener<AuthCubit, AuthState>(

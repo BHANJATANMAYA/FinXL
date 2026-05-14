@@ -8,13 +8,14 @@ class LocalDatabaseService {
   static final LocalDatabaseService instance = LocalDatabaseService._();
 
   static const String databaseName = 'finxl.db';
-  static const int databaseVersion = 4;
+  static const int databaseVersion = 5;
 
   static const String transactionsTable = 'transactions';
   static const String goalsTable = 'goals';
   static const String budgetsTable = 'budgets';
   static const String billsTable = 'bills';
   static const String userPreferencesTable = 'user_preferences';
+  static const String subscriptionsTable = 'subscriptions';
   static const String syncMetaTable = 'sync_meta';
 
   Database? _database;
@@ -135,6 +136,26 @@ class LocalDatabaseService {
     ''');
 
     await db.execute('''
+      CREATE TABLE $subscriptionsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        recurrence TEXT NOT NULL,
+        start_date TEXT NOT NULL,
+        next_renewal_date TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        category_id INTEGER,
+        user_id TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        deleted_at TEXT,
+        device_id TEXT,
+        cloud_id TEXT
+      );
+    ''');
+
+    await db.execute('''
       CREATE TABLE $syncMetaTable (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
@@ -203,6 +224,28 @@ class LocalDatabaseService {
         CREATE TABLE IF NOT EXISTS $syncMetaTable (
           key TEXT PRIMARY KEY,
           value TEXT NOT NULL
+        );
+      ''');
+    }
+
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS $subscriptionsTable (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          amount REAL NOT NULL,
+          recurrence TEXT NOT NULL,
+          start_date TEXT NOT NULL,
+          next_renewal_date TEXT NOT NULL,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          category_id INTEGER,
+          user_id TEXT,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          sync_status TEXT NOT NULL DEFAULT 'pending',
+          deleted_at TEXT,
+          device_id TEXT,
+          cloud_id TEXT
         );
       ''');
     }

@@ -15,7 +15,9 @@ import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/pages/add_goal_page.dart';
 import 'package:finxl/features/goals/presentation/pages/goals_page.dart';
 import 'package:finxl/features/profile/presentation/pages/profile_settings_page.dart';
+import 'package:finxl/features/finxl_score/presentation/pages/finxl_score_details_page.dart';
 import 'package:finxl/features/sms_detection/presentation/pages/sms_transaction_review_screen.dart';
+import 'package:finxl/features/subscriptions/presentation/pages/subscriptions_page.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transaction_cubit.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transactions_history_cubit.dart';
@@ -41,6 +43,8 @@ class AppRouter {
   static const String addBudgetPath = '/budget/new';
   static const String addBillPath = '/bills/new';
   static const String smsReviewPath = '/sms/review';
+  static const String subscriptionsPath = '/subscriptions';
+  static const String scoreDetailsPath = '/score-details';
 
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _dashboardNavigatorKey = GlobalKey<NavigatorState>();
@@ -188,6 +192,18 @@ class AppRouter {
         path: smsReviewPath,
         pageBuilder: (context, state) =>
             _buildPage(state, const SmsTransactionReviewScreen()),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: subscriptionsPath,
+        pageBuilder: (context, state) =>
+            _buildPage(state, const SubscriptionsPage()),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: scoreDetailsPath,
+        pageBuilder: (context, state) =>
+            _buildPage(state, const FinXLScoreDetailsPage()),
       ),
     ],
   );

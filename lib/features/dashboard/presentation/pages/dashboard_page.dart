@@ -17,6 +17,8 @@ import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/ai_categorization/domain/entities/insight_model.dart';
 import 'package:finxl/features/dashboard/domain/entities/dashboard_snapshot.dart';
 import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart';
+import 'package:finxl/features/finxl_score/presentation/widgets/finxl_score_card.dart';
+import 'package:finxl/features/subscriptions/presentation/widgets/subscription_summary_card.dart';
 import 'package:finxl/features/transactions/presentation/widgets/transaction_list_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -58,8 +60,16 @@ class DashboardPage extends StatelessWidget {
                   _BudgetAlertsCard(alerts: snapshot.budgetAlerts),
                   const SizedBox(height: 16),
                 ],
+                FinXLScoreCard(
+                  onTap: () => context.push(AppRouter.scoreDetailsPath),
+                ),
+                const SizedBox(height: 24),
                 _BalanceSection(snapshot: snapshot),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+                SubscriptionSummaryCard(
+                  onTap: () => context.push(AppRouter.subscriptionsPath),
+                ),
+                const SizedBox(height: 24),
                 _MonthlyFlowCard(snapshot: snapshot),
                 if (visibleInsights.isNotEmpty) ...[
                   const SizedBox(height: 16),
