@@ -2,6 +2,7 @@ import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/cubit/goals_cubit.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -236,6 +237,9 @@ class _AddGoalPageState extends State<AddGoalPage> {
     // ✅ Check mounted AFTER async
     if (!mounted) return;
 
-    if (success) context.pop();
+    if (success) {
+      context.read<SyncBloc>().syncInBackground();
+      context.pop();
+    }
   }
 }

@@ -8,6 +8,7 @@ import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/analytics/presentation/cubit/analytics_cubit.dart';
 import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
 import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:finxl/features/transactions/domain/entities/transaction_form_config.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transaction_cubit.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,8 @@ class AddTransactionPage extends StatelessWidget {
           context.read<DashboardCubit>().refresh();
           context.read<AnalyticsCubit>().refresh();
           context.read<BudgetCubit>().refresh();
+          // Push the new transaction to Supabase immediately
+          context.read<SyncBloc>().syncInBackground();
           context.pop();
         }
       },

@@ -2,6 +2,7 @@ import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/features/bills/domain/entities/bills_overview.dart';
 import 'package:finxl/features/bills/presentation/cubit/bills_cubit.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -227,6 +228,9 @@ class _AddBillPageState extends State<AddBillPage> {
       category: _category,
       recurrence: recurrenceValue.isEmpty ? 'Monthly' : recurrenceValue,
     );
-    if (success && mounted) context.pop();
+    if (success && mounted) {
+      context.read<SyncBloc>().syncInBackground();
+      context.pop();
+    }
   }
 }

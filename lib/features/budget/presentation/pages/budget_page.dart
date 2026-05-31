@@ -10,6 +10,7 @@ import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
 import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
 import 'package:finxl/core/theme/theme_cubit.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -533,6 +534,7 @@ class _BudgetMenuBuilder extends StatelessWidget {
                 FilledButton(
                   onPressed: () {
                     context.read<BudgetCubit>().deleteBudget(category.id!);
+                    context.read<SyncBloc>().syncInBackground();
                     ctx.pop();
                   },
                   style: FilledButton.styleFrom(

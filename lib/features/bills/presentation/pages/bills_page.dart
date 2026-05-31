@@ -8,6 +8,7 @@ import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/bills/domain/entities/bills_overview.dart';
 import 'package:finxl/features/bills/presentation/cubit/bills_cubit.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -292,6 +293,7 @@ class _ReminderTile extends StatelessWidget {
       ),
       onDismissed: (_) {
         context.read<BillsCubit>().deleteReminder(reminder.id);
+        context.read<SyncBloc>().syncInBackground();
       },
       child: Opacity(
         opacity: reminder.isFaded ? 0.72 : 1,

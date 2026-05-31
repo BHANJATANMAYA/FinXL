@@ -10,6 +10,7 @@ import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/cubit/goals_cubit.dart';
+import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -406,6 +407,7 @@ class _GoalMenuBuilder extends StatelessWidget {
                 FilledButton(
                   onPressed: () {
                     context.read<GoalsCubit>().deleteGoal(goal.id!);
+                    context.read<SyncBloc>().syncInBackground();
                     ctx.pop();
                   },
                   style: FilledButton.styleFrom(
