@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:finxl/core/models/bill.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -5,12 +6,15 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class LocalNotificationService {
-  LocalNotificationService._();
+  LocalNotificationService._() : _plugin = FlutterLocalNotificationsPlugin();
+
+  @visibleForTesting
+  LocalNotificationService.internal(FlutterLocalNotificationsPlugin plugin)
+      : _plugin = plugin;
 
   static final LocalNotificationService instance = LocalNotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin;
 
   bool _initialized = false;
 

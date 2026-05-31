@@ -35,9 +35,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:finxl/core/theme/theme_cubit.dart';
 
 class FinXL extends StatelessWidget {
-  const FinXL({super.key});
+  const FinXL({required this.initialThemeMode, super.key});
+
+  final ThemeMode initialThemeMode;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +93,9 @@ class FinXL extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider<ThemeCubit>(
+            create: (_) => ThemeCubit(initialThemeMode),
+          ),
           BlocProvider<AuthCubit>(
             create: (context) =>
                 AuthCubit(authRepository: context.read<AuthRepository>()),
@@ -137,11 +143,18 @@ class FinXL extends StatelessWidget {
               AppRouter.router.go(AppRouter.welcomePath);
             }
           },
-          child: MaterialApp.router(
-            title: 'FinXL',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            routerConfig: AppRouter.router,
+          child: BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, themeMode) {
+              AppTheme.dynamicUpdate(themeMode == ThemeMode.dark);
+              return MaterialApp.router(
+                title: 'FinXL',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: themeMode,
+                routerConfig: AppRouter.router,
+              );
+            },
           ),
         ),
       ),

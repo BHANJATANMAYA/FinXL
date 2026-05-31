@@ -5,6 +5,7 @@ import 'package:finxl/core/presentation/widgets/progress_bar.dart';
 import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/presentation/widgets/status_badge.dart';
 import 'package:finxl/core/theme/app_theme.dart';
+import 'package:finxl/core/theme/theme_cubit.dart';
 import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
@@ -19,8 +20,10 @@ class GoalsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<GoalsCubit, GoalsState>(
-      builder: (context, state) {
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return BlocBuilder<GoalsCubit, GoalsState>(
+          builder: (context, state) {
         if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -107,6 +110,8 @@ class GoalsPage extends StatelessWidget {
               ],
             ),
           ),
+        );
+          },
         );
       },
     );
@@ -262,7 +267,7 @@ class _AddGoalCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(Icons.add, color: AppTheme.primary, size: 30),
+              child: Icon(Icons.add, color: AppTheme.primary, size: 30),
             ),
             const SizedBox(height: 16),
             Text(
@@ -355,7 +360,7 @@ class _GoalMenuBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: AppTheme.onSurfaceVariant),
+      icon: Icon(Icons.more_vert, color: AppTheme.onSurfaceVariant),
       color: AppTheme.surfaceContainerLowest,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
@@ -425,7 +430,7 @@ class _GoalMenuBuilder extends StatelessWidget {
           value: 'edit',
           child: Row(
             children: [
-              const Icon(Icons.edit_outlined, size: 20, color: AppTheme.onSurface),
+              Icon(Icons.edit_outlined, size: 20, color: AppTheme.onSurface),
               const SizedBox(width: 12),
               Text(
                 'Edit Goal',
@@ -441,7 +446,7 @@ class _GoalMenuBuilder extends StatelessWidget {
           value: 'delete',
           child: Row(
             children: [
-              const Icon(Icons.delete_outline, color: AppTheme.danger, size: 20),
+              Icon(Icons.delete_outline, color: AppTheme.danger, size: 20),
               const SizedBox(width: 12),
               Text(
                 'Delete Goal',

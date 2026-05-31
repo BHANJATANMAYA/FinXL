@@ -18,6 +18,7 @@ import 'package:finxl/features/ai_categorization/domain/entities/insight_model.d
 import 'package:finxl/features/dashboard/domain/entities/dashboard_snapshot.dart';
 import 'package:finxl/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:finxl/features/transactions/presentation/widgets/transaction_list_card.dart';
+import 'package:finxl/core/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -28,8 +29,10 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DashboardCubit, DashboardState>(
-      builder: (context, state) {
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return BlocBuilder<DashboardCubit, DashboardState>(
+          builder: (context, state) {
         if (state.status == LoadStatus.loading && state.snapshot == null) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -98,6 +101,8 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
         );
+          },
+        );
       },
     );
   }
@@ -125,7 +130,7 @@ class _SmartInsightsSection extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            const Icon(Icons.auto_awesome, color: AppTheme.primary, size: 18),
+            Icon(Icons.auto_awesome, color: AppTheme.primary, size: 18),
           ],
         ),
         const SizedBox(height: 12),
@@ -250,53 +255,74 @@ class _BalanceSection extends StatelessWidget {
 
     return Column(
       children: [
-        Text(
-          'TOTAL BALANCE',
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.6,
-            color: AppTheme.onSurfaceVariant,
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push(AppRouter.addTransactionPath),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Column(
+                children: [
+                  Text(
+                    'TOTAL BALANCE',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.6,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    formatCurrency(snapshot.totalBalance),
+                    style: GoogleFonts.manrope(
+                      fontSize: 54,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -2,
+                      height: 1,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          formatCurrency(snapshot.totalBalance),
-          style: GoogleFonts.manrope(
-            fontSize: 54,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -2,
-            height: 1,
-          ),
-          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.1),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push(AppRouter.transactionsHistoryPath),
             borderRadius: BorderRadius.circular(22),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isPositive ? Icons.trending_up : Icons.trending_down,
-                color: badgeColor,
-                size: 18,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: badgeColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(22),
               ),
-              const SizedBox(width: 8),
-              Text(
-                isPositive
-                    ? 'You saved ${formatCurrency(snapshot.savedThisMonth)} this month'
-                    : 'You overspent ${formatCurrency(snapshot.savedThisMonth.abs())} this month',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: badgeColor,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPositive ? Icons.trending_up : Icons.trending_down,
+                    color: badgeColor,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isPositive
+                        ? 'You saved ${formatCurrency(snapshot.savedThisMonth)} this month'
+                        : 'You overspent ${formatCurrency(snapshot.savedThisMonth.abs())} this month',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: badgeColor,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ],
@@ -312,6 +338,7 @@ class _MonthlyFlowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SectionCard(
+      onTap: () => context.go('/analytics'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -437,6 +464,7 @@ class _WeeklyTrendCard extends StatelessWidget {
     final peak = snapshot.weeklyTrend.fold<double>(0, math.max);
 
     return SectionCard(
+      onTap: () => context.go('/analytics'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -465,7 +493,7 @@ class _WeeklyTrendCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const Icon(Icons.insights, color: AppTheme.onSurfaceVariant),
+              Icon(Icons.insights, color: AppTheme.onSurfaceVariant),
             ],
           ),
           const SizedBox(height: 24),
@@ -530,6 +558,7 @@ class _HighlightCard extends StatelessWidget {
     final accent = AppTheme.accentColor(highlight.accent);
     return SectionCard(
       padding: const EdgeInsets.all(20),
+      onTap: () => context.go('/analytics'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -632,41 +661,50 @@ class _BudgetAlertsCard extends StatelessWidget {
 
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: color.withValues(alpha: 0.3)),
               ),
-              child: Row(
-                children: [
-                  Icon(icon, color: color),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => context.go('/budget'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
                       children: [
-                        Text(
-                          isExceeded
-                              ? 'Budget Exceeded'
-                              : 'Nearing Budget Limit',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: color,
-                          ),
-                        ),
-                        Text(
-                          '${budget.categoryName} (${formatCurrency(budget.spentAmount)} / ${formatCurrency(budget.limitAmount)})',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppTheme.onSurfaceVariant,
+                        Icon(icon, color: color),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isExceeded
+                                    ? 'Budget Exceeded'
+                                    : 'Nearing Budget Limit',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: color,
+                                ),
+                              ),
+                              Text(
+                                '${budget.categoryName} (${formatCurrency(budget.spentAmount)} / ${formatCurrency(budget.limitAmount)})',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppTheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
             );
           })
@@ -687,6 +725,7 @@ class _ActiveGoalCard extends StatelessWidget {
       goal.targetAmount,
     );
     return SectionCard(
+      onTap: () => context.go('/goals'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -702,7 +741,7 @@ class _ActiveGoalCard extends StatelessWidget {
                   color: AppTheme.onSurfaceVariant,
                 ),
               ),
-              const Icon(Icons.track_changes, color: AppTheme.onSurfaceVariant),
+              Icon(Icons.track_changes, color: AppTheme.onSurfaceVariant),
             ],
           ),
           const SizedBox(height: 16),
@@ -785,6 +824,7 @@ class _UpcomingBillsCard extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         SectionCard(
+          onTap: () => context.go('/bills'),
           padding: EdgeInsets.zero,
           child: Column(
             children: List.generate(bills.length, (index) {
@@ -800,7 +840,7 @@ class _UpcomingBillsCard extends StatelessWidget {
                         color: AppTheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.receipt_long,
                         color: AppTheme.tertiary,
                       ),

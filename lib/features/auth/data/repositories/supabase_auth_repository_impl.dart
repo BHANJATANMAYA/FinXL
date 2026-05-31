@@ -50,6 +50,8 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
       email: user.email,
       fullName:
           metadata?['full_name'] as String? ?? metadata?['name'] as String?,
+      avatarUrl:
+          metadata?['avatar_url'] as String? ?? metadata?['picture'] as String?,
     );
   }
 

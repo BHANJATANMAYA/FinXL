@@ -22,7 +22,7 @@ class FinxlBottomNav extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          color: Colors.white.withValues(alpha: 0.84),
+          color: AppTheme.surfaceContainerLowest.withValues(alpha: 0.84),
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
           child: Row(
             children: AppTab.values

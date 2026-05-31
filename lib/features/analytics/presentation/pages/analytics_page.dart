@@ -6,6 +6,7 @@ import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/presentation/widgets/segmented_control.dart';
 import 'package:finxl/core/presentation/widgets/status_badge.dart';
 import 'package:finxl/core/theme/app_theme.dart';
+import 'package:finxl/core/theme/theme_cubit.dart';
 import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/analytics/domain/entities/analytics_overview.dart';
@@ -19,8 +20,10 @@ class AnalyticsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AnalyticsCubit, AnalyticsState>(
-      builder: (context, state) {
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return BlocBuilder<AnalyticsCubit, AnalyticsState>(
+          builder: (context, state) {
         if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -99,6 +102,8 @@ class AnalyticsPage extends StatelessWidget {
               ],
             ),
           ),
+        );
+          },
         );
       },
     );
@@ -466,7 +471,7 @@ class _SpendingTrendCard extends StatelessWidget {
                                   top: Radius.circular(14),
                                 ),
                                 border: isHighest
-                                    ? const Border(
+                                    ? Border(
                                         top: BorderSide(
                                           color: AppTheme.primary,
                                           width: 4,

@@ -81,7 +81,7 @@ class WelcomePage extends StatelessWidget {
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -1,
                                 ),
-                            children: const [
+                            children: [
                               TextSpan(text: 'Fin'),
                               TextSpan(
                                 text: 'XL',
@@ -303,7 +303,7 @@ class WelcomePage extends StatelessWidget {
                             Container(
                               height: 4,
                               width: 4,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppTheme.surfaceContainerHighest,
                               ),
@@ -360,10 +360,10 @@ class WelcomePage extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppTheme.surfaceContainerLow.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(32),
             border: Border.all(
-                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.1)),
+                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.12)),
             boxShadow: AppTheme.cardDecoration().boxShadow,
           ),
           child: Row(
@@ -403,7 +403,7 @@ class WelcomePage extends StatelessWidget {
           height: 208,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppTheme.surfaceContainerLow.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
                 color: AppTheme.onSurfaceVariant.withValues(alpha: 0.2)),
@@ -438,7 +438,7 @@ class WelcomePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const Icon(Icons.contactless_outlined,
+                   Icon(Icons.contactless_outlined,
                       size: 32, color: AppTheme.secondary),
                 ],
               ),

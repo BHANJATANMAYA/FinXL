@@ -55,7 +55,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         backgroundColor: AppTheme.surface,
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.primary),
+            icon: Icon(Icons.arrow_back_rounded, color: AppTheme.primary),
             onPressed: () => context.pop(),
           ),
           title: Text(
@@ -98,7 +98,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         decoration: AppTheme.cardDecoration(
                           color: AppTheme.surfaceContainerLowest,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.lock_reset_rounded,
                           size: 48,
                           color: AppTheme.primary,
@@ -149,7 +149,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Enter your email',
                                   prefixIcon: Icon(
                                     Icons.alternate_email_rounded,
@@ -233,7 +233,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               ),
 
                               const SizedBox(height: 32),
-                              const Divider(
+                              Divider(
                                 color: AppTheme.surfaceContainerHighest,
                               ),
                               const SizedBox(height: 32),
@@ -280,35 +280,46 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         children: [
                           Icon(
                             Icons.verified_user_rounded,
-                            size: 16,
-                            color: AppTheme.onSurfaceVariant.withValues(
-                              alpha: 0.6,
+                            size: 13,
+                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'BANK-GRADE SECURITY',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 9,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Container(
+                              width: 3,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.lock_rounded,
+                            size: 13,
+                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(width: 6),
                           Text(
-                            'SECURELY PROTECTED BY FINXL SECURITY',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: AppTheme.onSurfaceVariant.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                  letterSpacing: 1.5,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
-                                ),
+                            'END-TO-END ENCRYPTION',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 9,
+                            ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '© 2024 FinXL Financial Technologies. All rights reserved.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.onSurfaceVariant.withValues(
-                            alpha: 0.5,
-                          ),
-                          fontSize: 11,
-                        ),
                       ),
                     ],
                   ),

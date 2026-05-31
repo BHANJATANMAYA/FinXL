@@ -26,7 +26,7 @@ GOOGLE_IOS_CLIENT_ID=test-ios-client
   });
 
   testWidgets('unauthenticated app shows welcome screen', (tester) async {
-    await tester.pumpWidget(const FinXL());
+    await tester.pumpWidget(const FinXL(initialThemeMode: ThemeMode.system));
     await tester.pump(const Duration(seconds: 2));
 
     expect(find.text('Track smarter. Spend wiser.'), findsOneWidget);

@@ -14,7 +14,9 @@ import 'package:finxl/features/dashboard/presentation/pages/dashboard_page.dart'
 import 'package:finxl/features/goals/domain/entities/goals_overview.dart';
 import 'package:finxl/features/goals/presentation/pages/add_goal_page.dart';
 import 'package:finxl/features/goals/presentation/pages/goals_page.dart';
+import 'package:finxl/features/profile/presentation/pages/privacy_policy_page.dart';
 import 'package:finxl/features/profile/presentation/pages/profile_settings_page.dart';
+
 import 'package:finxl/features/sms_detection/presentation/pages/sms_transaction_review_screen.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:finxl/features/transactions/presentation/cubit/transaction_cubit.dart';
@@ -34,6 +36,7 @@ class AppRouter {
   static const String forgotPasswordPath = '/forgot-password';
 
   static const String profilePath = '/profile';
+  static const String privacyPolicyPath = '/privacy-policy';
   static const String dashboardPath = '/dashboard';
   static const String addTransactionPath = '/transaction/new';
   static const String transactionsHistoryPath = '/transactions';
@@ -182,6 +185,12 @@ class AppRouter {
         path: profilePath,
         pageBuilder: (context, state) =>
             _buildPage(state, const ProfileSettingsPage()),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: privacyPolicyPath,
+        pageBuilder: (context, state) =>
+            _buildPage(state, const PrivacyPolicyPage()),
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

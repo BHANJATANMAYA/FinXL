@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,5 +19,17 @@ Future<void> main() async {
   );
 
   await LocalNotificationService.instance.initialize();
-  runApp(const FinXL());
+
+  ThemeMode initialThemeMode = ThemeMode.light;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final modeIndex = prefs.getInt('theme_mode');
+    if (modeIndex != null && modeIndex >= 0 && modeIndex < ThemeMode.values.length) {
+      initialThemeMode = ThemeMode.values[modeIndex];
+    }
+  } catch (_) {
+    // Fail silently, default to light
+  }
+
+  runApp(FinXL(initialThemeMode: initialThemeMode));
 }

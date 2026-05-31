@@ -432,40 +432,92 @@ class _SignUpPageState extends State<SignUpPage> {
                     // Policy Context
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Opacity(
-                        opacity: 0.4,
-                        child: Text.rich(
-                          TextSpan(
-                            text: 'By creating an account, you agree to our ',
-                            children: [
-                              const TextSpan(
-                                text: 'Terms of Service',
-                                style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                ),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'By creating an account, you agree to our ',
+                          children: [
+                            TextSpan(
+                              text: 'Terms of Service',
+                              style: TextStyle(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppTheme.primary,
                               ),
-                              const TextSpan(text: ' and '),
-                              const TextSpan(
-                                text: 'Privacy Policy',
-                                style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                ),
+                            ),
+                            const TextSpan(text: ' and '),
+                            TextSpan(
+                              text: 'Privacy Policy',
+                              style: TextStyle(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppTheme.primary,
                               ),
-                              const TextSpan(
-                                text:
-                                    '. Your data is encrypted with bank-grade security protocols.',
-                              ),
-                            ],
-                          ),
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                fontSize: 10,
-                                height: 1.6,
-                                color: AppTheme.onSurface,
-                              ),
+                            ),
+                            const TextSpan(
+                              text:
+                                  '. Your data is encrypted with bank-grade security protocols.',
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 10,
+                          height: 1.6,
+                          color: AppTheme.onSurfaceVariant.withValues(alpha: 0.7),
                         ),
                       ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Security Badges
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.verified_user_rounded,
+                          size: 13,
+                          color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'BANK-GRADE SECURITY',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.lock_rounded,
+                          size: 13,
+                          color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'END-TO-END ENCRYPTION',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

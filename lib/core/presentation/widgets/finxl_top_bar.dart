@@ -5,13 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
   const FinxlTopBar({
     this.onProfileTap,
-    this.onNotificationTap,
     this.syncIndicator,
     super.key,
   });
 
   final VoidCallback? onProfileTap;
-  final VoidCallback? onNotificationTap;
   final Widget? syncIndicator;
 
   @override
@@ -35,11 +33,11 @@ class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppTheme.surfaceContainer,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person,
                       color: AppTheme.onSurfaceVariant,
                     ),
@@ -57,21 +55,7 @@ class FinxlTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
             ),
-            Row(
-              children: [
-                if (syncIndicator != null) ...[
-                  syncIndicator!,
-                  const SizedBox(width: 4),
-                ],
-                IconButton(
-                  onPressed: onNotificationTap,
-                  icon: const Icon(
-                    Icons.notifications_outlined,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+            ?syncIndicator,
           ],
         ),
       ),

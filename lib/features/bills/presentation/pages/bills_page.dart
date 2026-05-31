@@ -3,6 +3,7 @@ import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
 import 'package:finxl/core/presentation/widgets/section_card.dart';
 import 'package:finxl/core/theme/app_theme.dart';
+import 'package:finxl/core/theme/theme_cubit.dart';
 import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/bills/domain/entities/bills_overview.dart';
@@ -17,8 +18,10 @@ class BillsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<BillsCubit, BillsState>(
-      builder: (context, state) {
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return BlocBuilder<BillsCubit, BillsState>(
+          builder: (context, state) {
         if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -155,7 +158,7 @@ class BillsPage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.add_circle_outline,
                           color: AppTheme.onSurfaceVariant,
                         ),
@@ -175,6 +178,8 @@ class BillsPage extends StatelessWidget {
               ],
             ),
           ),
+        );
+          },
         );
       },
     );

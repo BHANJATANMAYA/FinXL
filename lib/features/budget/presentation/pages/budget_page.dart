@@ -9,6 +9,7 @@ import 'package:finxl/core/utils/formatters.dart';
 import 'package:finxl/core/utils/icon_mapper.dart';
 import 'package:finxl/features/budget/domain/entities/budget_overview.dart';
 import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
+import 'package:finxl/core/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -19,7 +20,9 @@ class BudgetPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<BudgetCubit, BudgetState>(
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return BlocBuilder<BudgetCubit, BudgetState>(
       builder: (context, state) {
         if (state.status == LoadStatus.loading && state.overview == null) {
           return const Center(child: CircularProgressIndicator());
@@ -50,23 +53,23 @@ class BudgetPage extends StatelessWidget {
 
         if (overview.alertTitle == 'Critical Alert') {
           alertColor = AppTheme.danger;
-          alertBgColor = const Color(0xFFFFF1F0);
-          alertIconBgColor = const Color(0xFFFFDAD6);
+          alertBgColor = AppTheme.danger.withValues(alpha: 0.08);
+          alertIconBgColor = AppTheme.danger.withValues(alpha: 0.15);
           alertIcon = Icons.warning_amber_rounded;
         } else if (overview.alertTitle == 'Heads Up') {
           alertColor = AppTheme.warning;
-          alertBgColor = const Color(0xFFFFFBEB);
-          alertIconBgColor = const Color(0xFFFEF3C7);
+          alertBgColor = AppTheme.warning.withValues(alpha: 0.08);
+          alertIconBgColor = AppTheme.warning.withValues(alpha: 0.15);
           alertIcon = Icons.info_outline_rounded;
         } else if (overview.alertTitle == 'No Budgets Yet') {
           alertColor = AppTheme.secondary;
-          alertBgColor = const Color(0xFFF0F9FF);
-          alertIconBgColor = const Color(0xFFE0F2FE);
+          alertBgColor = AppTheme.secondary.withValues(alpha: 0.08);
+          alertIconBgColor = AppTheme.secondary.withValues(alpha: 0.15);
           alertIcon = Icons.account_balance_wallet_outlined;
         } else {
           alertColor = AppTheme.primary;
-          alertBgColor = const Color(0xFFF0FDF4);
-          alertIconBgColor = const Color(0xFFDCFCE7);
+          alertBgColor = AppTheme.primary.withValues(alpha: 0.08);
+          alertIconBgColor = AppTheme.primary.withValues(alpha: 0.15);
           alertIcon = Icons.check_circle_outline_rounded;
         }
 
@@ -212,7 +215,7 @@ class BudgetPage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.add_circle_outline,
                           color: AppTheme.onSurfaceVariant,
                         ),
@@ -233,6 +236,8 @@ class BudgetPage extends StatelessWidget {
             ),
           ),
         );
+      },
+    );
       },
     );
   }
@@ -357,7 +362,7 @@ class _ExceededCard extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: 1,
                         strokeWidth: 12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
+                        valueColor: AlwaysStoppedAnimation<Color>(
                           AppTheme.danger,
                         ),
                         backgroundColor: AppTheme.surfaceContainer,
@@ -413,7 +418,7 @@ class _ExceededCard extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const StatusBadge(
+                              StatusBadge(
                                 label: 'Exceeded',
                                 accent: AppTheme.danger,
                               ),
@@ -427,7 +432,7 @@ class _ExceededCard extends StatelessWidget {
                     ),
                     if (!isWide) ...[
                       const SizedBox(height: 12),
-                      const StatusBadge(
+                      StatusBadge(
                         label: 'Exceeded',
                         accent: AppTheme.danger,
                       ),
@@ -456,7 +461,7 @@ class _ExceededCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(
+                        Icon(
                           Icons.trending_up,
                           size: 16,
                           color: AppTheme.primary,
@@ -482,7 +487,7 @@ class _BudgetMenuBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: AppTheme.onSurfaceVariant),
+      icon: Icon(Icons.more_vert, color: AppTheme.onSurfaceVariant),
       color: AppTheme.surfaceContainerLowest,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
@@ -552,7 +557,7 @@ class _BudgetMenuBuilder extends StatelessWidget {
           value: 'edit',
           child: Row(
             children: [
-              const Icon(Icons.edit_outlined, size: 20, color: AppTheme.onSurface),
+              Icon(Icons.edit_outlined, size: 20, color: AppTheme.onSurface),
               const SizedBox(width: 12),
               Text(
                 'Edit Budget',
@@ -568,7 +573,7 @@ class _BudgetMenuBuilder extends StatelessWidget {
           value: 'delete',
           child: Row(
             children: [
-              const Icon(Icons.delete_outline, color: AppTheme.danger, size: 20),
+              Icon(Icons.delete_outline, color: AppTheme.danger, size: 20),
               const SizedBox(width: 12),
               Text(
                 'Delete Budget',

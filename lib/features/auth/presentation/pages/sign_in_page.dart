@@ -304,24 +304,45 @@ class _SignInPageState extends State<SignInPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.lock_rounded,
-                          size: 16,
-                          color: AppTheme.onSurfaceVariant.withValues(
-                            alpha: 0.6,
+                          Icons.verified_user_rounded,
+                          size: 13,
+                          color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'BANK-GRADE SECURITY',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.lock_rounded,
+                          size: 13,
+                          color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 6),
                         Text(
-                          // 'Your data is सुरक्षित 🔒',
-                          'Your data is Secure',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: AppTheme.onSurfaceVariant.withValues(
-                                  alpha: 0.6,
-                                ),
-                                letterSpacing: 0.5,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          'END-TO-END ENCRYPTION',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9,
+                          ),
                         ),
                       ],
                     ),
@@ -364,7 +385,7 @@ class _SignInPageState extends State<SignInPage> {
               fontWeight: FontWeight.w800,
               letterSpacing: -1,
             ),
-            children: const [
+            children: [
               TextSpan(text: 'Fin'),
               TextSpan(
                 text: 'XL',

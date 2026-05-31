@@ -8,6 +8,7 @@ class SectionCard extends StatelessWidget {
     this.color,
     this.border,
     this.boxShadow,
+    this.onTap,
     super.key,
   });
 
@@ -16,17 +17,37 @@ class SectionCard extends StatelessWidget {
   final Color? color;
   final Border? border;
   final List<BoxShadow>? boxShadow;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final decoration = AppTheme.cardDecoration(
+      color: color,
+      border: border,
+      boxShadow: boxShadow,
+    );
+
+    if (onTap == null) {
+      return Container(
+        padding: padding,
+        decoration: decoration,
+        child: child,
+      );
+    }
+
     return Container(
-      padding: padding,
-      decoration: AppTheme.cardDecoration(
-        color: color,
-        border: border,
-        boxShadow: boxShadow,
+      decoration: decoration,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: decoration.borderRadius as BorderRadius? ?? BorderRadius.circular(20),
+          child: Padding(
+            padding: padding,
+            child: child,
+          ),
+        ),
       ),
-      child: child,
     );
   }
 }

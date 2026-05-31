@@ -3,6 +3,7 @@ import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/presentation/widgets/finxl_bottom_nav.dart';
 import 'package:finxl/core/presentation/widgets/finxl_top_bar.dart';
 import 'package:finxl/core/theme/app_theme.dart';
+import 'package:finxl/core/theme/theme_cubit.dart';
 import 'package:finxl/features/analytics/presentation/cubit/analytics_cubit.dart';
 import 'package:finxl/features/bills/presentation/cubit/bills_cubit.dart';
 import 'package:finxl/features/budget/presentation/cubit/budget_cubit.dart';
@@ -35,29 +36,32 @@ class AppShellPage extends StatelessWidget {
           _refreshFeatureCubits(context);
         }
       },
-      child: Scaffold(
-        appBar: FinxlTopBar(
-          onProfileTap: () => context.push(AppRouter.profilePath),
-          onNotificationTap: () => context.go(AppTab.bills.location),
-          syncIndicator: const _TopBarSyncIndicator(),
-        ),
-        extendBody: true,
-        body: navigationShell,
-        floatingActionButton: FloatingActionButton.extended(
-          tooltip: 'Add transaction',
-          onPressed: () => context.push(AppRouter.addTransactionPath),
-          icon: const Icon(Icons.add),
-          label: const Text('Add'),
-        ),
-        bottomNavigationBar: FinxlBottomNav(
-          currentTab: currentTab,
-          onTabSelected: (tab) {
-            navigationShell.goBranch(
-              tab.index,
-              initialLocation: tab.index == navigationShell.currentIndex,
-            );
-          },
-        ),
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return Scaffold(
+            appBar: FinxlTopBar(
+              onProfileTap: () => context.push(AppRouter.profilePath),
+              syncIndicator: const _TopBarSyncIndicator(),
+            ),
+            extendBody: true,
+            body: navigationShell,
+            floatingActionButton: FloatingActionButton.extended(
+              tooltip: 'Add transaction',
+              onPressed: () => context.push(AppRouter.addTransactionPath),
+              icon: const Icon(Icons.add),
+              label: const Text('Add'),
+            ),
+            bottomNavigationBar: FinxlBottomNav(
+              currentTab: currentTab,
+              onTabSelected: (tab) {
+                navigationShell.goBranch(
+                  tab.index,
+                  initialLocation: tab.index == navigationShell.currentIndex,
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
@@ -127,26 +131,17 @@ class _TopBarSyncIndicator extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
-          SyncViewStatus.synced => const FinxlSyncIndicator(
-            icon: Icons.cloud_done_outlined,
-            color: AppTheme.primary,
-            tooltip: 'Cloud backup synced',
-          ),
-          SyncViewStatus.failed => const FinxlSyncIndicator(
+          SyncViewStatus.failed => FinxlSyncIndicator(
             icon: Icons.cloud_off_outlined,
             color: AppTheme.warning,
             tooltip: 'Cloud sync will retry',
           ),
-          SyncViewStatus.restoreAvailable => const FinxlSyncIndicator(
+          SyncViewStatus.restoreAvailable => FinxlSyncIndicator(
             icon: Icons.cloud_download_outlined,
             color: AppTheme.secondary,
             tooltip: 'Restore available',
           ),
-          SyncViewStatus.idle => const FinxlSyncIndicator(
-            icon: Icons.cloud_queue_outlined,
-            color: AppTheme.onSurfaceVariant,
-            tooltip: 'Cloud backup idle',
-          ),
+          SyncViewStatus.synced || SyncViewStatus.idle => const SizedBox.shrink(),
         };
       },
     );
