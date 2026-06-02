@@ -313,7 +313,7 @@ class _BalanceSection extends StatelessWidget {
                   Text(
                     isPositive
                         ? 'You saved ${formatCurrency(snapshot.savedThisMonth)} this month'
-                        : 'You overspent ${formatCurrency(snapshot.savedThisMonth.abs())} this month',
+                        : 'You spent ${formatCurrency(snapshot.savedThisMonth.abs())} more than earned',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -362,7 +362,9 @@ class _MonthlyFlowCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           FinxlProgressBar(
-            value: snapshot.remainingBudgetRatio,
+            value: snapshot.remainingBudgetRatio < 0
+                ? 0.0
+                : snapshot.remainingBudgetRatio,
             gradient: AppTheme.primaryGradient,
           ),
           const SizedBox(height: 14),
@@ -370,7 +372,9 @@ class _MonthlyFlowCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${formatPercent(snapshot.remainingBudgetRatio * 100)} BUDGET REMAINING',
+                snapshot.remainingBudgetRatio < 0
+                    ? 'NO BUDGET SET'
+                    : '${formatPercent(snapshot.remainingBudgetRatio * 100)} BUDGET REMAINING',
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -379,7 +383,7 @@ class _MonthlyFlowCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${snapshot.daysLeft} DAYS LEFT',
+                '${snapshot.daysLeft} ${snapshot.daysLeft == 1 ? 'DAY' : 'DAYS'} LEFT',
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -757,9 +761,10 @@ class _ActiveGoalCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child: Text(
-                      goal.icon!,
-                      style: const TextStyle(fontSize: 20),
+                    child: Icon(
+                      resolveIcon(goal.icon!),
+                      color: AppTheme.primary,
+                      size: 20,
                     ),
                   ),
                 ),

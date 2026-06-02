@@ -159,8 +159,8 @@ lib/
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/BHANJATANMAYA/finxl.git
+# Clone the private repository
+git clone <repository-url>
 cd finxl
 
 # Install dependencies
@@ -178,18 +178,9 @@ flutter test
 
 ---
 
-## 🤝 Contributing
+## 🔒 License & Proprietary Status
 
-Contributions are welcome! Any contributions you make are **greatly appreciated**.
+This project is private and proprietary. All rights reserved. 
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Unauthorized copying, distribution, modification, or use of this software and its source files, via any medium, is strictly prohibited. 
 
----
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.

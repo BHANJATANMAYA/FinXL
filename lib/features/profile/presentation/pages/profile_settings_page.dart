@@ -2,6 +2,11 @@ import 'package:finxl/core/navigation/app_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:finxl/core/common/load_status.dart';
 import 'package:finxl/core/notifications/local_notification_service.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
+import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
+import 'package:finxl/core/utils/finance_lookups.dart';
 import 'package:finxl/core/presentation/widgets/finxl_page_body.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/theme/theme_cubit.dart';
@@ -470,7 +475,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         title: 'Dark Mode',
         trailing: Switch.adaptive(
           value: context.watch<ThemeCubit>().state == ThemeMode.dark,
-          activeColor: const Color(0xFF2ECC71),
+          activeThumbColor: const Color(0xFF2ECC71),
           activeTrackColor: const Color(0xFF2ECC71).withValues(alpha: 0.3),
           onChanged: (val) {
             context.read<ThemeCubit>().toggleTheme(val);
@@ -490,7 +495,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         subtitle: 'Real-time spending updates',
         trailing: Switch.adaptive(
           value: _transactionAlerts,
-          activeColor: const Color(0xFF2ECC71),
+          activeThumbColor: const Color(0xFF2ECC71),
           activeTrackColor: const Color(0xFF2ECC71).withValues(alpha: 0.3),
           onChanged: (val) {
             setState(() {
@@ -506,7 +511,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         subtitle: 'When you reach 80% limit',
         trailing: Switch.adaptive(
           value: _budgetAlerts,
-          activeColor: const Color(0xFF2ECC71),
+          activeThumbColor: const Color(0xFF2ECC71),
           activeTrackColor: const Color(0xFF2ECC71).withValues(alpha: 0.3),
           onChanged: (val) {
             setState(() {
@@ -528,13 +533,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           iconColor: Colors.deepPurple,
           title: 'Export Data',
           subtitle: 'Export transactions to CSV or PDF files',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Exporting financial logs as CSV/PDF...'),
-              ),
-            );
-          },
+          onTap: () => _showExportOptionsBottomSheet(context),
         ),
         const SizedBox(height: 12),
         _buildCloudSyncCard(),
@@ -769,52 +768,53 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         ],
       ),
       onTap: () async {
-        final status = await Permission.notification.status;
-        if (status.isGranted || status.isProvisional || status.isLimited) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Notification permissions are already active.'),
-              ),
-            );
-          }
-        } else if (status.isPermanentlyDenied || status.isRestricted) {
-          if (context.mounted) {
-            _showNotificationPermissionDeniedDialog(context);
-          }
-        } else {
-          final result = await Permission.notification.request();
-          if (result.isGranted || result.isProvisional || result.isLimited) {
-            await LocalNotificationService.instance.initialize();
-            if (mounted) {
-              setState(() {
-                _notificationsEnabled = true;
-              });
-            }
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Notification permissions granted successfully.',
-                  ),
-                ),
-              );
-            }
-          } else if (result.isPermanentlyDenied || result.isRestricted) {
-            if (context.mounted) {
-              _showNotificationPermissionDeniedDialog(context);
-            }
-          } else {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Notification permissions denied.'),
-                ),
-              );
-            }
-          }
-        }
-      },
+  final status = await Permission.notification.status;
+
+  if (!mounted) return;
+
+  if (status.isGranted || status.isProvisional || status.isLimited) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Notification permissions are already active.'),
+      ),
+    );
+  } else if (status.isPermanentlyDenied || status.isRestricted) {
+    _showNotificationPermissionDeniedDialog(context);
+  } else {
+    final result = await Permission.notification.request();
+
+    if (!mounted) return;
+
+    if (result.isGranted ||
+        result.isProvisional ||
+        result.isLimited) {
+      await LocalNotificationService.instance.initialize();
+
+      if (!mounted) return;
+
+      setState(() {
+        _notificationsEnabled = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notification permissions granted successfully.',
+          ),
+        ),
+      );
+    } else if (result.isPermanentlyDenied ||
+        result.isRestricted) {
+      _showNotificationPermissionDeniedDialog(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notification permissions denied.'),
+        ),
+      );
+    }
+  }
+}
     );
   }
 
@@ -961,7 +961,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         title: 'App Lock (Face ID)',
         trailing: Switch.adaptive(
           value: _appLock,
-          activeColor: const Color(0xFF2ECC71),
+          activeThumbColor: const Color(0xFF2ECC71),
           activeTrackColor: const Color(0xFF2ECC71).withValues(alpha: 0.3),
           onChanged: (val) {
             setState(() {
@@ -1183,6 +1183,274 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     if (result == true && context.mounted) {
       context.read<AuthCubit>().signOut();
     }
+  }
+
+  void _showExportOptionsBottomSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Export Transactions',
+              style: GoogleFonts.manrope(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Choose your preferred file format for export',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.table_view_outlined,
+                  color: Colors.green,
+                ),
+              ),
+              title: Text(
+                'Export to CSV',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                'Best for Excel, Google Sheets, or other databases.',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+              ),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                _exportToCSV(context);
+              },
+            ),
+            const Divider(height: 24),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: Colors.deepPurple,
+                ),
+              ),
+              title: Text(
+                'Export to PDF (Preview)',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                'PDF printing and export will be available in future releases.',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+              ),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'PDF Export will be available in the next release. Please use CSV for now.',
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportToCSV(BuildContext context) async {
+    try {
+      final repository = context.read<TransactionRepository>();
+      final transactions = await repository.getTransactions();
+
+      if (transactions.isEmpty) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No transactions to export.')),
+        );
+        return;
+      }
+
+      // Build CSV Content
+      final csvBuffer = StringBuffer();
+      // Headers
+      csvBuffer.writeln('Date,Description,Category,Type,Amount,Payment Method');
+
+      for (final tx in transactions) {
+        final category = FinanceLookups.transactionCategory(
+          tx.categoryId,
+        ).label;
+        final type = tx.type.name.toUpperCase();
+        final amount = tx.amount.toStringAsFixed(2);
+        final date =
+            '${tx.date.year}-${tx.date.month.toString().padLeft(2, '0')}-${tx.date.day.toString().padLeft(2, '0')}';
+
+        // Escape description in case it has commas
+        var desc = tx.description.replaceAll('"', '""');
+        if (desc.contains(',') || desc.contains('\n') || desc.contains('"')) {
+          desc = '"$desc"';
+        }
+
+        csvBuffer.writeln(
+          '$date,$desc,$category,$type,$amount,${tx.paymentMethod}',
+        );
+      }
+
+      final directory = await getApplicationDocumentsDirectory();
+      final dateStr = DateTime.now().toIso8601String().split('T').first;
+      final file = File('${directory.path}/finxl_export_$dateStr.csv');
+      await file.writeAsString(csvBuffer.toString());
+
+      if (!context.mounted) return;
+      _showExportSuccessDialog(context, file.path);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Export failed: ${e.toString()}')));
+    }
+  }
+
+  void _showExportSuccessDialog(BuildContext context, String filePath) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.surfaceContainerLowest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: AppTheme.primary, size: 28),
+            const SizedBox(width: 12),
+            Text(
+              'Export Successful',
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your transaction history has been successfully exported to a CSV file.',
+              style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'FILE LOCATION',
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.surfaceContainerHighest.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
+              ),
+              child: SelectableText(
+                filePath,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: filePath));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('File path copied to clipboard.')),
+              );
+            },
+            child: Text(
+              'Copy Path',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              'Done',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<bool?> _showSmsConsentDialog(BuildContext context) {

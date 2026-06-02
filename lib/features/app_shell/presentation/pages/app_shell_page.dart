@@ -31,7 +31,7 @@ class AppShellPage extends StatelessWidget {
               current.status == SyncViewStatus.synced),
       listener: (context, state) async {
         if (state.restoreAvailable) {
-          await _showRestoreDialog(context);
+          await showRestoreDialog(context);
         } else if (state.status == SyncViewStatus.synced) {
           _refreshFeatureCubits(context);
         }
@@ -66,7 +66,7 @@ class AppShellPage extends StatelessWidget {
     );
   }
 
-  Future<void> _showRestoreDialog(BuildContext context) {
+  static Future<void> showRestoreDialog(BuildContext context) {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -134,14 +134,25 @@ class _TopBarSyncIndicator extends StatelessWidget {
           SyncViewStatus.failed => FinxlSyncIndicator(
             icon: Icons.cloud_off_outlined,
             color: AppTheme.warning,
-            tooltip: 'Cloud sync will retry',
+            tooltip: 'Cloud sync failed. Tap to retry.',
+            onTap: () {
+              context.read<SyncBloc>().syncNow();
+            },
           ),
           SyncViewStatus.restoreAvailable => FinxlSyncIndicator(
             icon: Icons.cloud_download_outlined,
             color: AppTheme.secondary,
-            tooltip: 'Restore available',
+            tooltip: 'Restore available. Tap to restore.',
+            onTap: () => AppShellPage.showRestoreDialog(context),
           ),
-          SyncViewStatus.synced || SyncViewStatus.idle => const SizedBox.shrink(),
+          SyncViewStatus.synced || SyncViewStatus.idle => FinxlSyncIndicator(
+            icon: Icons.cloud_done_outlined,
+            color: AppTheme.primary,
+            tooltip: 'Database synced to Cloud. Tap to sync again.',
+            onTap: () {
+              context.read<SyncBloc>().syncNow();
+            },
+          ),
         };
       },
     );

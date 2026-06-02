@@ -60,7 +60,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
       (sum, budget) => sum + budget.spentAmount,
     );
     final remainingBudgetRatio = totalBudget <= 0
-        ? 0.0
+        ? -1.0
         : ((totalBudget - totalBudgetSpent) / totalBudget)
               .clamp(0, 1)
               .toDouble();
@@ -123,7 +123,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
       monthlyIncome: monthlyIncome,
       monthlySpent: monthlySpent,
       remainingBudgetRatio: remainingBudgetRatio,
-      daysLeft: math.max(lastDayOfMonth.day - now.day, 0),
+      daysLeft: math.max(lastDayOfMonth.day - now.day + 1, 0),
       weeklyTrend: weeklyTrend.values,
       weeklyTrendLabels: weeklyTrend.labels,
       highlights: [
@@ -135,7 +135,9 @@ class DashboardRepositoryImpl implements DashboardRepository {
         ),
         DashboardHighlight(
           title: 'Budget Left',
-          value: '${(remainingBudgetRatio * 100).round()}%',
+          value: remainingBudgetRatio < 0
+              ? '—'
+              : '${(remainingBudgetRatio * 100).round()}%',
           iconKey: 'bank',
           accent: 'tertiary',
         ),
