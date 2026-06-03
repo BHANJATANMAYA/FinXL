@@ -9,6 +9,7 @@ import 'package:finxl/features/sms_detection/domain/entities/detected_sms_messag
 import 'package:finxl/features/sms_detection/domain/entities/sms_transaction_candidate.dart';
 import 'package:finxl/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SmsDetectionBloc extends Cubit<SmsDetectionState> {
   SmsDetectionBloc({
@@ -27,6 +28,20 @@ class SmsDetectionBloc extends Cubit<SmsDetectionState> {
   final SmsTransactionMapper _transactionMapper;
   final TransactionRepository _transactionRepository;
   StreamSubscription? _smsSubscription;
+
+  static const String _consentKey = 'sms_detection_consent';
+
+  Future<void> initialize() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final consented = prefs.getBool(_consentKey) ?? false;
+      if (consented) {
+        await enable();
+      }
+    } catch (_) {
+      // Fail silently
+    }
+  }
 
   Future<void> enable() async {
     emit(
@@ -62,6 +77,11 @@ class SmsDetectionBloc extends Cubit<SmsDetectionState> {
       return;
     }
 
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_consentKey, true);
+    } catch (_) {}
+
     await _detectionService.startListening();
     await _smsSubscription?.cancel();
     _smsSubscription = _detectionService.messages.listen(_handleSms);
@@ -80,6 +100,10 @@ class SmsDetectionBloc extends Cubit<SmsDetectionState> {
     await _smsSubscription?.cancel();
     _smsSubscription = null;
     await _detectionService.stopListening();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_consentKey, false);
+    } catch (_) {}
     emit(
       state.copyWith(
         userConsented: false,

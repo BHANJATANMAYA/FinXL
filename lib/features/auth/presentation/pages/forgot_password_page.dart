@@ -85,12 +85,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
             SafeArea(
               child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 32,
-                  ),
-                  child: Column(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 32,
+                      ),
+                      child: Column(
                     children: [
                       // Icon
                       Container(
@@ -275,57 +278,62 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       const SizedBox(height: 48),
 
                       // Footer
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.verified_user_rounded,
-                            size: 13,
-                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'BANK-GRADE SECURITY',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.verified_user_rounded,
+                              size: 13,
                               color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
-                              letterSpacing: 1.2,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 9,
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Container(
-                              width: 3,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
-                                shape: BoxShape.circle,
+                            const SizedBox(width: 6),
+                            Text(
+                              'BANK-GRADE SECURITY',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                letterSpacing: 1.2,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 9,
                               ),
                             ),
-                          ),
-                          Icon(
-                            Icons.lock_rounded,
-                            size: 13,
-                            color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'END-TO-END ENCRYPTION',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
-                              letterSpacing: 1.2,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 9,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              child: Container(
+                                width: 3,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                            Icon(
+                              Icons.lock_rounded,
+                              size: 13,
+                              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'END-TO-END ENCRYPTION',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                letterSpacing: 1.2,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
+          ),
+        ),
           ],
         ),
       ),

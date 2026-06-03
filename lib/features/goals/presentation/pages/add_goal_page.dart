@@ -77,71 +77,76 @@ class _AddGoalPageState extends State<AddGoalPage> {
             ).showSnackBar(SnackBar(content: Text(error)));
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                SectionCard(
-                  child: Column(
-                    children: [
-                      _field(
-                        controller: _titleController,
-                        label: 'Goal title',
-                        hint: 'Emergency Fund',
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    SectionCard(
+                      child: Column(
+                        children: [
+                          _field(
+                            controller: _titleController,
+                            label: 'Goal title',
+                            hint: 'Emergency Fund',
+                          ),
+                          const SizedBox(height: 16),
+                          _field(
+                            controller: _targetController,
+                            label: 'Target amount',
+                            hint: '50000',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _field(
+                            controller: _savedController,
+                            label: 'Already saved',
+                            hint: '0',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Deadline'),
+                            subtitle: Text(
+                              '${_deadline.day}/${_deadline.month}/${_deadline.year}',
+                            ),
+                            trailing: const Icon(Icons.calendar_today_outlined),
+                            onTap: _pickDate,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      _field(
-                        controller: _targetController,
-                        label: 'Target amount',
-                        hint: '50000',
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _field(
-                        controller: _savedController,
-                        label: 'Already saved',
-                        hint: '0',
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Deadline'),
-                        subtitle: Text(
-                          '${_deadline.day}/${_deadline.month}/${_deadline.year}',
-                        ),
-                        trailing: const Icon(Icons.calendar_today_outlined),
-                        onTap: _pickDate,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    BlocBuilder<GoalsCubit, GoalsState>(
+                      builder: (context, state) {
+                        return FilledButton(
+                          onPressed: state.isSaving ? null : _submit,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(56),
+                            backgroundColor: AppTheme.primary,
+                          ),
+                          child: state.isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text(_isEdit ? 'Update Goal' : 'Save Goal'),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                BlocBuilder<GoalsCubit, GoalsState>(
-                  builder: (context, state) {
-                    return FilledButton(
-                      onPressed: state.isSaving ? null : _submit,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
-                        backgroundColor: AppTheme.primary,
-                      ),
-                      child: state.isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(_isEdit ? 'Update Goal' : 'Save Goal'),
-                    );
-                  },
-                ),
-              ],
+              ),
             ),
           ),
         ),

@@ -39,11 +39,14 @@ class WelcomePage extends StatelessWidget {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: IntrinsicHeight(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 16),
-                        child: Column(
-                          children: [
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 500),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 16),
+                            child: Column(
+                              children: [
                   // Top section (Branding)
                   EntranceFader(
                     delay: const Duration(milliseconds: 100),
@@ -322,10 +325,12 @@ class WelcomePage extends StatelessWidget {
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:finxl/core/navigation/app_router.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:finxl/core/common/load_status.dart';
+// import 'package:finxl/core/common/load_status.dart';
 import 'package:finxl/core/notifications/local_notification_service.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -12,7 +12,7 @@ import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/theme/theme_cubit.dart';
 import 'package:finxl/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:finxl/features/sms_detection/presentation/bloc/sms_detection_bloc.dart';
-import 'package:finxl/features/sms_detection/presentation/pages/sms_transaction_review_screen.dart';
+// import 'package:finxl/features/sms_detection/presentation/pages/sms_transaction_review_screen.dart';
 import 'package:finxl/features/sync/presentation/bloc/sync_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -52,20 +52,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<SmsDetectionBloc, SmsDetectionState>(
-      listenWhen: (previous, current) =>
-          (!previous.reviewPending && current.reviewPending) ||
-          previous.errorMessage != current.errorMessage ||
-          (!previous.savedTransaction && current.savedTransaction),
-      listener: (context, state) {
-        if (state.reviewPending) {
-          SmsTransactionReviewScreen.showReviewSheet(context);
-        } else if (state.errorMessage != null &&
-            state.status == LoadStatus.failure) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
-        }
-      },
+      listenWhen: (_, _) => false,
+      listener: (context, state) {},
       child: Scaffold(
         backgroundColor: AppTheme.surface,
         appBar: AppBar(

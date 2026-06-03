@@ -65,122 +65,127 @@ class _AddBillPageState extends State<AddBillPage> {
             ).showSnackBar(SnackBar(content: Text(error)));
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                SectionCard(
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _titleController,
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                            ? 'Required'
-                            : null,
-                        decoration: const InputDecoration(labelText: 'Title'),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _amountController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                            ? 'Required'
-                            : null,
-                        decoration: const InputDecoration(labelText: 'Amount'),
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<BillCategory>(
-                        initialValue: _category,
-                        borderRadius: BorderRadius.circular(24),
-                        decoration: const InputDecoration(
-                          labelText: 'Reminder type',
-                        ),
-                        items: BillCategory.values
-                            .map(
-                              (item) => DropdownMenuItem(
-                                value: item,
-                                child: Text(_label(item)),
-                              ),
-                            )
-                            .toList(growable: false),
-                        onChanged: (value) {
-                          if (value != null) setState(() => _category = value);
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedRecurrence,
-                        borderRadius: BorderRadius.circular(24),
-                        decoration: const InputDecoration(
-                          labelText: 'Recurrence',
-                        ),
-                        items: _recurrenceOptions
-                            .map(
-                              (item) => DropdownMenuItem(
-                                value: item,
-                                child: Text(item),
-                              ),
-                            )
-                            .toList(growable: false),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _selectedRecurrence = value);
-                          }
-                        },
-                      ),
-                      if (_selectedRecurrence == 'Custom') ...[
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _customRecurrenceController,
-                          decoration: const InputDecoration(
-                            labelText: 'Custom Recurrence',
-                            hintText: 'e.g. Every 2 weeks',
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    SectionCard(
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _titleController,
+                            validator: (value) =>
+                                (value == null || value.trim().isEmpty)
+                                ? 'Required'
+                                : null,
+                            decoration: const InputDecoration(labelText: 'Title'),
                           ),
-                          validator: (value) =>
-                              (value == null || value.trim().isEmpty)
-                              ? 'Required'
-                              : null,
-                        ),
-                      ],
-                      const SizedBox(height: 20),
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Due date'),
-                        subtitle: Text(
-                          '${_dueDate.day}/${_dueDate.month}/${_dueDate.year}',
-                        ),
-                        trailing: const Icon(Icons.calendar_today_outlined),
-                        onTap: _pickDate,
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _amountController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (value) =>
+                                (value == null || value.trim().isEmpty)
+                                ? 'Required'
+                                : null,
+                            decoration: const InputDecoration(labelText: 'Amount'),
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<BillCategory>(
+                            initialValue: _category,
+                            borderRadius: BorderRadius.circular(24),
+                            decoration: const InputDecoration(
+                              labelText: 'Reminder type',
+                            ),
+                            items: BillCategory.values
+                                .map(
+                                  (item) => DropdownMenuItem(
+                                    value: item,
+                                    child: Text(_label(item)),
+                                  ),
+                                )
+                                .toList(growable: false),
+                            onChanged: (value) {
+                              if (value != null) setState(() => _category = value);
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedRecurrence,
+                            borderRadius: BorderRadius.circular(24),
+                            decoration: const InputDecoration(
+                              labelText: 'Recurrence',
+                            ),
+                            items: _recurrenceOptions
+                                .map(
+                                  (item) => DropdownMenuItem(
+                                    value: item,
+                                    child: Text(item),
+                                  ),
+                                )
+                                .toList(growable: false),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _selectedRecurrence = value);
+                              }
+                            },
+                          ),
+                          if (_selectedRecurrence == 'Custom') ...[
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _customRecurrenceController,
+                              decoration: const InputDecoration(
+                                labelText: 'Custom Recurrence',
+                                hintText: 'e.g. Every 2 weeks',
+                              ),
+                              validator: (value) =>
+                                  (value == null || value.trim().isEmpty)
+                                  ? 'Required'
+                                  : null,
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Due date'),
+                            subtitle: Text(
+                              '${_dueDate.day}/${_dueDate.month}/${_dueDate.year}',
+                            ),
+                            trailing: const Icon(Icons.calendar_today_outlined),
+                            onTap: _pickDate,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    BlocBuilder<BillsCubit, BillsState>(
+                      builder: (context, state) {
+                        return FilledButton(
+                          onPressed: state.isSaving ? null : _submit,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(56),
+                            backgroundColor: AppTheme.primary,
+                          ),
+                          child: state.isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text('Save Reminder'),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                BlocBuilder<BillsCubit, BillsState>(
-                  builder: (context, state) {
-                    return FilledButton(
-                      onPressed: state.isSaving ? null : _submit,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
-                        backgroundColor: AppTheme.primary,
-                      ),
-                      child: state.isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Save Reminder'),
-                    );
-                  },
-                ),
-              ],
+              ),
             ),
           ),
         ),

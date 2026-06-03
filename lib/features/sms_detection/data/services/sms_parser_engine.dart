@@ -83,34 +83,56 @@ class SmsParserEngine {
   String _extractMerchant(String body, {required String fallback}) {
     final patterns = [
       RegExp(
-        r'\b(?:on|at|to|for)\s+([a-z][a-z0-9 &._-]{2,30})',
+        r'\b(?:on|at|to|for|from)\s+([a-z][a-z0-9 &._-]{2,30})',
         caseSensitive: false,
       ),
       RegExp(
-        r'\b([a-z][a-z0-9 &._-]{2,30})\s+(?:debited|credited|spent|used|paid)',
+        r'\b([a-z][a-z0-9 &._-]{2,30})\s+(?:debited|credited|spent|used|paid|received)',
         caseSensitive: false,
       ),
     ];
     for (final pattern in patterns) {
-      final match = pattern.firstMatch(body);
-      final raw = match?.group(1);
-      if (raw == null) continue;
-      final cleaned = _cleanMerchant(raw);
-      if (cleaned.isNotEmpty && !_looksLikeBankingNoise(cleaned)) {
-        return cleaned;
+      final matches = pattern.allMatches(body);
+      for (final match in matches) {
+        final raw = match.group(1);
+        if (raw == null) continue;
+        final cleaned = _cleanMerchant(raw);
+        if (cleaned.isNotEmpty &&
+            !_looksLikeBankingNoise(cleaned) &&
+            !_isInvalidMerchant(cleaned)) {
+          return cleaned;
+        }
       }
     }
     return fallback;
   }
 
   String _cleanMerchant(String value) {
-    final words = value
+    var cleaned = value;
+
+    // Find the first occurrence of boundary words and truncate
+    final boundaryPatterns = [
+      RegExp(
+        r'\b(?:using|via|ending|through|with|by|a/c|account|card|bank)\b',
+        caseSensitive: false,
+      ),
+    ];
+    for (final pattern in boundaryPatterns) {
+      final match = pattern.firstMatch(cleaned);
+      if (match != null) {
+        cleaned = cleaned.substring(0, match.start);
+      }
+    }
+
+    // Trim leading/trailing punctuation and spaces
+    cleaned = cleaned
+        .replaceAll(RegExp(r'^[.,:;_\-\s]+'), '')
+        .replaceAll(RegExp(r'[.,:;_\-\s]+$'), '');
+
+    final words = cleaned
         .replaceAll(RegExp(r'\s+'), ' ')
         .replaceAll(
-          RegExp(
-            r'\b(?:rs|inr|via|using|ending|a/c|account)\b',
-            caseSensitive: false,
-          ),
+          RegExp(r'\b(?:rs|inr)\b', caseSensitive: false),
           '',
         )
         .trim();
@@ -131,6 +153,40 @@ class SmsParserEngine {
         lower.contains('account') ||
         lower.contains('bank') ||
         lower.length < 2;
+  }
+
+  bool _isInvalidMerchant(String value) {
+    final trimmed = value.trim();
+    if (trimmed.length < 2) return true;
+
+    // If it's just numbers, dots, commas, spaces, or common currency symbols
+    final numericOnly = trimmed.replaceAll(RegExp(r'[0-9\s.,₹$£€-]'), '');
+    if (numericOnly.isEmpty) return true;
+
+    // If it looks like a date (e.g., 12-04-23)
+    if (RegExp(r'^\d+[\/\-]\d+[\/\-]\d+$').hasMatch(trimmed)) return true;
+
+    // If it looks like a ref/UUID/Hex noise
+    if (RegExp(r'^[0-9a-fA-F\-]{8,}$').hasMatch(trimmed)) return true;
+
+    final lower = trimmed.toLowerCase();
+    final invalidKeywords = {
+      'otp',
+      'sms',
+      'charge',
+      'charges',
+      'balance',
+      'fee',
+      'fees',
+      'available',
+      'limit',
+      'credit limit',
+      'overdraft',
+      'interest',
+    };
+    if (invalidKeywords.contains(lower)) return true;
+
+    return false;
   }
 
   double _confidenceFor(String body, String merchant) {

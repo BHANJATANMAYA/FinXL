@@ -1,4 +1,4 @@
-package com.tanmay.finxl
+package com.finxl.app
 
 import android.Manifest
 import android.content.BroadcastReceiver

@@ -112,12 +112,15 @@ class _SignUpPageState extends State<SignUpPage> {
         backgroundColor: AppTheme.surface,
         body: SafeArea(
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Minimal Back Navigation
                     IconButton(
@@ -473,9 +476,11 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: 24),
 
                     // Security Badges
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                         Icon(
                           Icons.verified_user_rounded,
                           size: 13,
@@ -517,7 +522,8 @@ class _SignUpPageState extends State<SignUpPage> {
                             fontSize: 9,
                           ),
                         ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -525,6 +531,8 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
           ),
         ),
+      ),
+    ),
       ),
     );
   }

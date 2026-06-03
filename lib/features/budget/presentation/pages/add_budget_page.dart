@@ -68,73 +68,78 @@ class _AddBudgetPageState extends State<AddBudgetPage> {
             ).showSnackBar(SnackBar(content: Text(error)));
           }
         },
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                SectionCard(
-                  child: Column(
-                    children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: _category,
-                        borderRadius: BorderRadius.circular(24),
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                        ),
-                        items: FinanceLookups.transactionCategories
-                            .map(
-                              (item) => DropdownMenuItem(
-                                value: item.label,
-                                child: Text(item.label),
-                              ),
-                            )
-                            .toList(growable: false),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _category = value);
-                          }
-                        },
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    SectionCard(
+                      child: Column(
+                        children: [
+                          DropdownButtonFormField<String>(
+                            initialValue: _category,
+                            borderRadius: BorderRadius.circular(24),
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                            ),
+                            items: FinanceLookups.transactionCategories
+                                .map(
+                                  (item) => DropdownMenuItem(
+                                    value: item.label,
+                                    child: Text(item.label),
+                                  ),
+                                )
+                                .toList(growable: false),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _category = value);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _limitController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (value) =>
+                                (value == null || value.trim().isEmpty)
+                                ? 'Required'
+                                : null,
+                            decoration: const InputDecoration(
+                              labelText: 'Monthly limit',
+                              hintText: 'Enter monthly budget limit',
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _limitController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                            ? 'Required'
-                            : null,
-                        decoration: const InputDecoration(
-                          labelText: 'Monthly limit',
-                          hintText: 'Enter monthly budget limit',
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    BlocBuilder<BudgetCubit, BudgetState>(
+                      builder: (context, state) {
+                        return FilledButton(
+                          onPressed: state.isSaving ? null : _submit,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(56),
+                            backgroundColor: AppTheme.primary,
+                          ),
+                          child: state.isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Text(_isEdit ? 'Update Budget' : 'Save Budget'),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                BlocBuilder<BudgetCubit, BudgetState>(
-                  builder: (context, state) {
-                    return FilledButton(
-                      onPressed: state.isSaving ? null : _submit,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
-                        backgroundColor: AppTheme.primary,
-                      ),
-                      child: state.isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(_isEdit ? 'Update Budget' : 'Save Budget'),
-                    );
-                  },
-                ),
-              ],
+              ),
             ),
           ),
         ),

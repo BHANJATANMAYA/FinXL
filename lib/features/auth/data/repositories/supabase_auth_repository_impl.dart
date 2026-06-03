@@ -123,7 +123,10 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> sendPasswordReset(String email) {
     return _runAuthRequest(() async {
-      await _client.auth.resetPasswordForEmail(email);
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'com.finxl.app://auth-callback',
+      );
     });
   }
 

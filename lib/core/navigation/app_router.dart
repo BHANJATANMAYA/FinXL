@@ -34,6 +34,7 @@ class AppRouter {
   static const String signInPath = '/sign-in';
   static const String signUpPath = '/sign-up';
   static const String forgotPasswordPath = '/forgot-password';
+  static const String authCallbackPath = '/auth-callback';
 
   static const String profilePath = '/profile';
   static const String privacyPolicyPath = '/privacy-policy';
@@ -77,6 +78,14 @@ class AppRouter {
         path: forgotPasswordPath,
         pageBuilder: (context, state) =>
             _buildPage(state, const ForgotPasswordPage()),
+      ),
+      // Handles com.finxl.app://auth-callback deep link from Supabase emails
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: authCallbackPath,
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: SizedBox.shrink()),
+        redirect: (context, state) => signInPath,
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

@@ -55,39 +55,44 @@ class AddTransactionPage extends StatelessWidget {
         ),
         bottomNavigationBar: SafeArea(
           minimum: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-          child: SizedBox(
-            height: 60,
-            child: BlocSelector<TransactionCubit, TransactionState, bool>(
-              selector: (state) => state.isSubmitting,
-              builder: (context, isSubmitting) {
-                return FilledButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : context.read<TransactionCubit>().submit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          'Add Transaction',
-                          style: GoogleFonts.manrope(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: SizedBox(
+                height: 60,
+                child: BlocSelector<TransactionCubit, TransactionState, bool>(
+                  selector: (state) => state.isSubmitting,
+                  builder: (context, isSubmitting) {
+                    return FilledButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : context.read<TransactionCubit>().submit,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
                         ),
-                );
-              },
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Add Transaction',
+                              style: GoogleFonts.manrope(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),

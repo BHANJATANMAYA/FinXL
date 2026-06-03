@@ -25,6 +25,8 @@ import 'package:finxl/features/sms_detection/data/services/sms_detection_service
 import 'package:finxl/features/sms_detection/data/services/sms_parser_engine.dart';
 import 'package:finxl/features/sms_detection/data/services/sms_transaction_mapper.dart';
 import 'package:finxl/features/sms_detection/presentation/bloc/sms_detection_bloc.dart';
+import 'package:finxl/features/sms_detection/presentation/pages/sms_transaction_review_screen.dart';
+import 'package:finxl/core/common/load_status.dart';
 import 'package:finxl/features/sync/data/repositories/sync_repository_impl.dart';
 import 'package:finxl/features/sync/data/services/sync_service.dart';
 import 'package:finxl/features/sync/domain/repositories/sync_repository.dart';
@@ -128,7 +130,7 @@ class FinXL extends StatelessWidget {
               parserEngine: context.read<SmsParserEngine>(),
               transactionMapper: context.read<SmsTransactionMapper>(),
               transactionRepository: context.read<TransactionRepository>(),
-            ),
+            )..initialize(),
           ),
           BlocProvider(
             create: (context) => SyncBloc(context.read<SyncRepository>()),
@@ -146,13 +148,37 @@ class FinXL extends StatelessWidget {
           child: BlocBuilder<ThemeCubit, ThemeMode>(
             builder: (context, themeMode) {
               AppTheme.dynamicUpdate(themeMode == ThemeMode.dark);
-              return MaterialApp.router(
-                title: 'FinXL',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.lightTheme,
-                darkTheme: AppTheme.darkTheme,
-                themeMode: themeMode,
-                routerConfig: AppRouter.router,
+              return BlocListener<SmsDetectionBloc, SmsDetectionState>(
+                listenWhen: (previous, current) =>
+                    (!previous.reviewPending && current.reviewPending) ||
+                    (previous.errorMessage != current.errorMessage &&
+                        current.errorMessage != null &&
+                        current.status == LoadStatus.failure),
+                listener: (context, state) {
+                  final navContext = AppRouter
+                      .router
+                      .routerDelegate
+                      .navigatorKey
+                      .currentContext;
+                  if (navContext == null) return;
+
+                  if (state.reviewPending && state.pendingCandidate != null) {
+                    SmsTransactionReviewScreen.showReviewSheet(navContext);
+                  } else if (state.errorMessage != null &&
+                      state.status == LoadStatus.failure) {
+                    ScaffoldMessenger.of(navContext).showSnackBar(
+                      SnackBar(content: Text(state.errorMessage!)),
+                    );
+                  }
+                },
+                child: MaterialApp.router(
+                  title: 'FinXL',
+                  debugShowCheckedModeBanner: false,
+                  theme: AppTheme.lightTheme,
+                  darkTheme: AppTheme.darkTheme,
+                  themeMode: themeMode,
+                  routerConfig: AppRouter.router,
+                ),
               );
             },
           ),

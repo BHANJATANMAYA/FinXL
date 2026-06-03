@@ -186,17 +186,22 @@ class BudgetPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: regular
-                      .map(
-                        (category) => SizedBox(
-                          width: 430,
-                          child: _BudgetCard(category: category),
-                        ),
-                      )
-                      .toList(growable: false),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth < 500 ? double.infinity : 430.0;
+                    return Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: regular
+                          .map(
+                            (category) => SizedBox(
+                              width: width,
+                              child: _BudgetCard(category: category),
+                            ),
+                          )
+                          .toList(growable: false),
+                    );
+                  },
                 ),
                 if (overspentList.isNotEmpty) ...[
                   const SizedBox(height: 24),

@@ -1,6 +1,7 @@
 import 'package:finxl/core/navigation/app_tab.dart';
 import 'package:finxl/core/navigation/app_router.dart';
 import 'package:finxl/core/presentation/widgets/finxl_bottom_nav.dart';
+import 'package:finxl/core/presentation/widgets/finxl_navigation_rail.dart';
 import 'package:finxl/core/presentation/widgets/finxl_top_bar.dart';
 import 'package:finxl/core/theme/app_theme.dart';
 import 'package:finxl/core/theme/theme_cubit.dart';
@@ -38,28 +39,52 @@ class AppShellPage extends StatelessWidget {
       },
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
+          final double screenWidth = MediaQuery.of(context).size.width;
+          final bool isTablet = screenWidth >= 720;
+
           return Scaffold(
             appBar: FinxlTopBar(
               onProfileTap: () => context.push(AppRouter.profilePath),
               syncIndicator: const _TopBarSyncIndicator(),
             ),
-            extendBody: true,
-            body: navigationShell,
-            floatingActionButton: FloatingActionButton.extended(
-              tooltip: 'Add transaction',
-              onPressed: () => context.push(AppRouter.addTransactionPath),
-              icon: const Icon(Icons.add),
-              label: const Text('Add'),
+            extendBody: !isTablet,
+            body: Row(
+              children: [
+                if (isTablet) ...[
+                  FinxlNavigationRail(
+                    currentTab: currentTab,
+                    onTabSelected: (tab) {
+                      navigationShell.goBranch(
+                        tab.index,
+                        initialLocation: tab.index == navigationShell.currentIndex,
+                      );
+                    },
+                  ),
+                ],
+                Expanded(
+                  child: navigationShell,
+                ),
+              ],
             ),
-            bottomNavigationBar: FinxlBottomNav(
-              currentTab: currentTab,
-              onTabSelected: (tab) {
-                navigationShell.goBranch(
-                  tab.index,
-                  initialLocation: tab.index == navigationShell.currentIndex,
-                );
-              },
-            ),
+            floatingActionButton: isTablet
+                ? null
+                : FloatingActionButton.extended(
+                    tooltip: 'Add transaction',
+                    onPressed: () => context.push(AppRouter.addTransactionPath),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                  ),
+            bottomNavigationBar: isTablet
+                ? null
+                : FinxlBottomNav(
+                    currentTab: currentTab,
+                    onTabSelected: (tab) {
+                      navigationShell.goBranch(
+                        tab.index,
+                        initialLocation: tab.index == navigationShell.currentIndex,
+                      );
+                    },
+                  ),
           );
         },
       ),

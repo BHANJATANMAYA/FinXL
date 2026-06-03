@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.tanmay.finxl"
+    namespace = "com.finxl.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.tanmay.finxl"
+        applicationId = "com.finxl.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

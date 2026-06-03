@@ -75,17 +75,22 @@ class DashboardPage extends StatelessWidget {
                 ],
                 _WeeklyTrendCard(snapshot: snapshot),
                 const SizedBox(height: 16),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: snapshot.highlights
-                      .map(
-                        (highlight) => SizedBox(
-                          width: 342,
-                          child: _HighlightCard(highlight: highlight),
-                        ),
-                      )
-                      .toList(growable: false),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth < 500 ? double.infinity : 342.0;
+                    return Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: snapshot.highlights
+                          .map(
+                            (highlight) => SizedBox(
+                              width: width,
+                              child: _HighlightCard(highlight: highlight),
+                            ),
+                          )
+                          .toList(growable: false),
+                    );
+                  },
                 ),
                 if (snapshot.upcomingBills.isNotEmpty) ...[
                   const SizedBox(height: 32),

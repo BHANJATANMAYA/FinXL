@@ -71,43 +71,53 @@ class GoalsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: overview.goals
-                      .map(
-                        (goal) =>
-                            SizedBox(width: 430, child: _GoalCard(goal: goal)),
-                      )
-                      .toList(growable: false),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth < 500 ? double.infinity : 430.0;
+                    return Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: overview.goals
+                          .map(
+                            (goal) =>
+                                SizedBox(width: width, child: _GoalCard(goal: goal)),
+                          )
+                          .toList(growable: false),
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 const _AddGoalCard(),
                 const SizedBox(height: 24),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    SizedBox(
-                      width: 430,
-                      child: _SummaryCard(
-                        title: 'Total Saved',
-                        value: formatCurrency(overview.totalSaved),
-                        iconKey: 'savings',
-                        accent: AppTheme.secondary,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 430,
-                      child: _SummaryCard(
-                        title: 'Completed',
-                        value: overview.completedMilestone,
-                        iconKey: 'celebration',
-                        accent: AppTheme.primary,
-                        isCompact: true,
-                      ),
-                    ),
-                  ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth < 500 ? double.infinity : 430.0;
+                    return Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        SizedBox(
+                          width: width,
+                          child: _SummaryCard(
+                            title: 'Total Saved',
+                            value: formatCurrency(overview.totalSaved),
+                            iconKey: 'savings',
+                            accent: AppTheme.secondary,
+                          ),
+                        ),
+                        SizedBox(
+                          width: width,
+                          child: _SummaryCard(
+                            title: 'Completed',
+                            value: overview.completedMilestone,
+                            iconKey: 'celebration',
+                            accent: AppTheme.primary,
+                            isCompact: true,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
